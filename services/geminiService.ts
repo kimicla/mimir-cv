@@ -9,7 +9,17 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const refineTextWithAI = async (text: string, prompt: string): Promise<string> => {
   try {
-    const fullPrompt = `${prompt}:\n\n"${text}"`;
+    const fullPrompt = `${prompt}
+
+IMPORTANT CONSTRAINTS:
+- Only improve grammar, clarity, and professional tone
+- Do NOT add bullet points, formatting, or structural changes
+- Do NOT add any information that is not in the original text
+- Keep the same content length and structure
+- Return only the refined text without any additional commentary
+
+Original text: "${text}"`;
+
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: fullPrompt,
@@ -102,7 +112,10 @@ export const parseResumeWithAI = (file: File): Promise<ParsedResumeData> => {
                               },
                           },
                           {
-                              text: "Extract the content from this resume and structure it according to the provided JSON schema. For experience descriptions, combine the bullet points into a single string with newline characters separating them. Ensure dates are concise, like 'Jan 2020' or 'Present'.",
+                              text: `Extract the content from this resume and structure it according to the provided JSON schema.
+                                    For experience descriptions, combine the bullet points into a single string with newline characters separating them.
+                                    Ensure dates are concise, like 'Jan 2020' or 'Present'.
+                                    Return ONLY valid JSON without any additional text, disclaimers, or explanations.`,
                           },
                       ],
                   },
@@ -112,8 +125,29 @@ export const parseResumeWithAI = (file: File): Promise<ParsedResumeData> => {
                   },
                 });
 
-                const parsedJson = JSON.parse(response.text);
-                resolve(parsedJson);
+                // Clean and extract JSON from the response
+                let cleanedResponse = response.text.trim();
+                
+                // Try to extract JSON from the response if it contains extra text
+                const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    cleanedResponse = jsonMatch[0];
+                }
+                
+                // Remove any trailing incomplete JSON
+                const lastBraceIndex = cleanedResponse.lastIndexOf('}');
+                if (lastBraceIndex !== -1) {
+                    cleanedResponse = cleanedResponse.substring(0, lastBraceIndex + 1);
+                }
+                
+                try {
+                    const parsedJson = JSON.parse(cleanedResponse);
+                    resolve(parsedJson);
+                } catch (parseError) {
+                    console.error("JSON parsing failed, raw response:", response.text);
+                    console.error("Cleaned response:", cleanedResponse);
+                    reject(new Error(`Failed to parse JSON response: ${parseError instanceof Error ? parseError.message : 'Unknown parsing error'}`));
+                }
 
             } catch (error) {
                  console.error("Error parsing resume with AI:", error);

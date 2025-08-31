@@ -24,7 +24,7 @@ const initialResumeData: ResumeData = {
       location: 'San Francisco, CA',
       startDate: 'Jan 2021',
       endDate: 'Present',
-      description: '- Led the development of a new customer-facing analytics dashboard, resulting in a 20% increase in user engagement.\n- Mentored junior developers, improving team productivity by 15%.\n- Optimized application performance, reducing page load times by 30%.',
+      description: '**Key Achievements & Responsibilities:**\n- Led the development of a new customer-facing analytics dashboard, resulting in a 20% increase in user engagement\n- Mentored junior developers, improving team productivity by 15%\n- Optimized application performance, reducing page load times by 30%\n\n**Technical Leadership:**\n- Architected scalable microservices using Node.js and PostgreSQL\n- Implemented CI/CD pipelines reducing deployment time by 50%\n- Collaborated with cross-functional teams to deliver high-quality solutions',
     },
   ],
   education: [
@@ -58,6 +58,7 @@ const Header: React.FC<{ onPrint: () => void; onExport: () => void; }> = ({ onPr
         <button
             onClick={onPrint}
             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            title="Print resume or save as PDF using your browser's print dialog"
         >
             <PrintIcon className="w-5 h-5" />
             Print / Download PDF
@@ -80,7 +81,10 @@ const App: React.FC = () => {
   const jsonInputRef = useRef<HTMLInputElement>(null);
 
   const handlePrint = () => {
-      window.print();
+      // Add a small delay to ensure the UI is ready for printing
+      setTimeout(() => {
+          window.print();
+      }, 100);
   };
   
   const handleExportJson = () => {

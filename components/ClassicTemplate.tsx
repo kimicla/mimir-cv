@@ -36,7 +36,7 @@ export const ClassicTemplate: React.FC<TemplateProps> = ({ data }) => {
           <section className="mb-8">
             <h2 className="text-xl font-bold border-b border-gray-300 pb-1 mb-2 uppercase tracking-widest text-gray-900">Experience</h2>
             {experience.map(exp => (
-              <div key={exp.id} className="mb-4 break-inside-avoid">
+              <div key={exp.id} className="mb-4 break-inside-avoid no-page-break">
                 <div className="flex justify-between items-baseline">
                   <h3 className="text-lg font-semibold text-gray-800">{exp.jobTitle}</h3>
                   <p className="text-sm font-light text-gray-600">{exp.startDate} - {exp.endDate}</p>
@@ -55,7 +55,7 @@ export const ClassicTemplate: React.FC<TemplateProps> = ({ data }) => {
           <section className="mb-8">
             <h2 className="text-xl font-bold border-b border-gray-300 pb-1 mb-2 uppercase tracking-widest text-gray-900">Education</h2>
             {education.map(edu => (
-              <div key={edu.id} className="mb-2 break-inside-avoid">
+              <div key={edu.id} className="mb-2 break-inside-avoid no-page-break">
                 <div className="flex justify-between items-baseline">
                   <h3 className="text-lg font-semibold text-gray-800">{edu.degree}</h3>
                   <p className="text-sm font-light text-gray-600">{edu.graduationDate}</p>
