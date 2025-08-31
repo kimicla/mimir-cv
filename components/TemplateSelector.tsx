@@ -13,7 +13,7 @@ interface TemplateSelectorProps {
 
 export const TemplateSelector: React.FC<TemplateSelectorProps> = ({ selectedTemplate, onSelect }) => {
   return (
-    <div className="p-6 bg-white border-b border-slate-200">
+    <div className="p-6 bg-white rounded-lg shadow-sm">
       <h3 className="text-lg font-semibold text-slate-800 mb-3">Template</h3>
       <div className="flex flex-wrap gap-4">
         {templates.map((template) => (

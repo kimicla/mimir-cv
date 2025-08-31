@@ -34,14 +34,21 @@ export const CreativeTemplate: React.FC<TemplateProps> = ({ data }) => {
                 {experience.length > 0 && (
                     <section>
                         <h2 className="text-2xl font-bold text-teal-700 mb-4 uppercase tracking-wider">Experience</h2>
-                        {experience.map(exp => (
-                            <div key={exp.id} className="mb-6 relative pl-8 before:absolute before:left-2 before:top-2.5 before:w-2 before:h-2 before:bg-teal-500 before:rounded-full break-inside-avoid">
-                                <div className="flex justify-between items-baseline">
-                                    <h3 className="text-xl font-semibold text-gray-900">{exp.jobTitle}</h3>
-                                    <p className="text-sm font-medium text-gray-500">{exp.startDate} - {exp.endDate}</p>
+                        {experience.map(company => (
+                            <div key={company.id} className="mb-6 relative pl-8 before:absolute before:left-2 before:top-2.5 before:w-2 before:h-2 before:bg-teal-500 before:rounded-full break-inside-avoid">
+                                <div className="flex justify-between items-baseline mb-1">
+                                    <h3 className="text-xl font-semibold text-gray-900">{company.company}</h3>
+                                    <p className="text-md italic text-gray-600">{company.location}</p>
                                 </div>
-                                <p className="text-md italic text-gray-600 mb-1">{exp.company} | {exp.location}</p>
-                                <DescriptionRenderer text={exp.description} className="mt-1" />
+                                {company.positions.map(pos => (
+                                    <div key={pos.id} className="mt-2">
+                                        <div className="flex justify-between items-baseline">
+                                            <h4 className="text-lg font-semibold text-gray-800">{pos.jobTitle}</h4>
+                                            <p className="text-sm font-medium text-gray-500">{pos.startDate} - {pos.endDate}</p>
+                                        </div>
+                                        <DescriptionRenderer text={pos.description} className="mt-1" />
+                                    </div>
+                                ))}
                             </div>
                         ))}
                     </section>

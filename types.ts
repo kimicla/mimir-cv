@@ -7,14 +7,19 @@ export interface PersonalInfo {
   address: string;
 }
 
-export interface Experience {
+export interface Position {
   id: string;
   jobTitle: string;
-  company: string;
-  location: string;
   startDate: string;
   endDate: string;
   description: string;
+}
+
+export interface CompanyExperience {
+  id: string;
+  company: string;
+  location: string;
+  positions: Position[];
 }
 
 export interface Education {
@@ -28,7 +33,7 @@ export interface Education {
 export interface ResumeData {
   personalInfo: PersonalInfo;
   summary: string;
-  experience: Experience[];
+  experience: CompanyExperience[];
   education: Education[];
   skills: string[];
 }

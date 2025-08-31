@@ -1,10 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { parseResumeWithAI } from '../services/geminiService';
 import { UploadIcon } from './icons';
-import type { ResumeData, Experience, Education } from '../types';
+import type { ResumeData, CompanyExperience, Position, Education } from '../types';
 
 type ImportedResumeData = Omit<ResumeData, 'experience' | 'education'> & {
-    experience: Omit<Experience, 'id'>[];
+    experience: (Omit<CompanyExperience, 'id' | 'positions'> & {
+        positions: Omit<Position, 'id'>[];
+    })[];
     education: Omit<Education, 'id'>[];
 };
 
@@ -26,7 +28,7 @@ export const ResumeImporter: React.FC<ResumeImporterProps> = ({ onImportSuccess,
 
     try {
       const parsedData = await parseResumeWithAI(file);
-      onImportSuccess(parsedData);
+      onImportSuccess(parsedData as ImportedResumeData);
     } catch (error) {
       console.error("Failed to parse resume:", error);
       onImportError(error instanceof Error ? `Error: ${error.message}` : "An unknown error occurred during parsing. Please check the file and try again.");
@@ -56,7 +58,7 @@ export const ResumeImporter: React.FC<ResumeImporterProps> = ({ onImportSuccess,
       <button
         onClick={handleButtonClick}
         disabled={isLoading}
-        className="w-full h-full flex items-center justify-center gap-3 px-4 py-3 bg-indigo-50 text-indigo-700 font-semibold rounded-lg hover:bg-indigo-100 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-wait"
+        className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-indigo-50 text-indigo-700 font-semibold rounded-lg hover:bg-indigo-100 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-wait"
         aria-live="polite"
       >
         {isLoading ? (

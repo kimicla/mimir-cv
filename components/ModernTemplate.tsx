@@ -62,17 +62,21 @@ export const ModernTemplate: React.FC<TemplateProps> = ({ data }) => {
                 {experience.length > 0 && (
                     <section>
                         <h2 className="text-xl font-bold text-slate-800 border-b-2 border-slate-200 pb-2 mb-4">Experience</h2>
-                        {experience.map(exp => (
-                            <div key={exp.id} className="mb-6 break-inside-avoid">
-                                <div className="flex justify-between items-baseline">
-                                    <h3 className="text-lg font-semibold text-slate-900">{exp.jobTitle}</h3>
-                                    <p className="text-sm text-slate-500">{exp.startDate} - {exp.endDate}</p>
+                        {experience.map(company => (
+                            <div key={company.id} className="mb-6 break-inside-avoid">
+                                <div className="flex justify-between items-baseline mb-1">
+                                    <h3 className="text-lg font-semibold text-slate-900">{company.company}</h3>
+                                    <p className="text-md text-slate-600">{company.location}</p>
                                 </div>
-                                <div className="mb-2">
-                                    <p className="text-md text-slate-600">{exp.company}</p>
-                                    <p className="text-sm text-slate-500 text-right">{exp.location}</p>
-                                </div>
-                                <DescriptionRenderer text={exp.description} className="mt-1 text-slate-600" />
+                                {company.positions.map(pos => (
+                                    <div key={pos.id} className="mb-3 last:mb-0">
+                                        <div className="flex justify-between items-baseline">
+                                            <h4 className="text-md font-semibold text-slate-800">{pos.jobTitle}</h4>
+                                            <p className="text-sm text-slate-500">{pos.startDate} - {pos.endDate}</p>
+                                        </div>
+                                        <DescriptionRenderer text={pos.description} className="mt-1 text-slate-600" />
+                                    </div>
+                                ))}
                             </div>
                         ))}
                     </section>

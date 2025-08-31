@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import type { ResumeData, Experience, Education } from '../types';
+import type { ResumeData, CompanyExperience, Position, Education } from '../types';
 import { SparklesIcon, PlusIcon, TrashIcon } from './icons';
 import { refineTextWithAI } from '../services/geminiService';
 
@@ -8,7 +8,6 @@ interface ResumeFormProps {
   setResumeData: React.Dispatch<React.SetStateAction<ResumeData>>;
 }
 
-// FIX: Added optional `name` prop to InputField to pass to the underlying input element.
 const InputField: React.FC<{
   label: string;
   id: string;
@@ -32,7 +31,6 @@ const InputField: React.FC<{
   </div>
 );
 
-// FIX: Added optional `name` prop to TextAreaWithAI to fix a bug in handleExperienceChange.
 const TextAreaWithAI: React.FC<{
   label: string;
   id: string;
@@ -109,35 +107,65 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({ resumeData, setResumeDat
     }, [setResumeData]);
 
     const refineSummary = useCallback(async () => {
-        const prompt = `Based on the following resume data, write a professional and compelling summary of 2-4 sentences. Focus on key achievements and skills.\n\nExperience: ${resumeData.experience.map(exp => `${exp.jobTitle} at ${exp.company}: ${exp.description}`).join('\n')}\n\nSkills: ${resumeData.skills.join(', ')}`;
+        const experienceText = resumeData.experience.map(comp =>
+            `Company: ${comp.company}\n` + comp.positions.map(pos => `${pos.jobTitle}: ${pos.description}`).join('\n')
+        ).join('\n\n');
+        const prompt = `Based on the following resume data, write a professional and compelling summary of 2-4 sentences. Focus on key achievements and skills.\n\nExperience: ${experienceText}\n\nSkills: ${resumeData.skills.join(', ')}`;
         const refinedSummary = await refineTextWithAI(resumeData.summary || "A motivated professional", prompt);
         setResumeData(prev => ({ ...prev, summary: refinedSummary }));
     }, [resumeData.experience, resumeData.skills, resumeData.summary, setResumeData]);
 
-    const handleExperienceChange = useCallback((index: number, e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleCompanyChange = useCallback((companyIndex: number, e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         const newExperience = [...resumeData.experience];
-        newExperience[index] = { ...newExperience[index], [name]: value };
+        newExperience[companyIndex] = { ...newExperience[companyIndex], [name]: value };
         setResumeData(prev => ({ ...prev, experience: newExperience }));
     }, [resumeData.experience, setResumeData]);
     
-    const refineExperienceDescription = useCallback(async (index: number) => {
-        const exp = resumeData.experience[index];
-        if (!exp) return;
-        const prompt = "Rewrite the following resume description to be more impactful. Use action verbs, focus on quantifiable achievements, and list as bullet points (using '- ').";
-        const refinedDescription = await refineTextWithAI(exp.description, prompt);
+    const handlePositionChange = useCallback((companyIndex: number, positionIndex: number, e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
         const newExperience = [...resumeData.experience];
-        newExperience[index] = { ...newExperience[index], description: refinedDescription };
+        const newPositions = [...newExperience[companyIndex].positions];
+        newPositions[positionIndex] = { ...newPositions[positionIndex], [name]: value };
+        newExperience[companyIndex] = { ...newExperience[companyIndex], positions: newPositions };
+        setResumeData(prev => ({ ...prev, experience: newExperience }));
+    }, [resumeData.experience, setResumeData]);
+    
+    const refineExperienceDescription = useCallback(async (companyIndex: number, positionIndex: number) => {
+        const pos = resumeData.experience[companyIndex]?.positions[positionIndex];
+        if (!pos) return;
+        const prompt = "Rewrite the following resume description to be more impactful. Use action verbs, focus on quantifiable achievements, and list as bullet points (using '- ').";
+        const refinedDescription = await refineTextWithAI(pos.description, prompt);
+        
+        const newExperience = [...resumeData.experience];
+        const newPositions = [...newExperience[companyIndex].positions];
+        newPositions[positionIndex] = { ...newPositions[positionIndex], description: refinedDescription };
+        newExperience[companyIndex] = { ...newExperience[companyIndex], positions: newPositions };
         setResumeData(prev => ({ ...prev, experience: newExperience }));
     }, [resumeData.experience, setResumeData]);
 
-    const addExperience = useCallback(() => {
-        const newExperience: Experience = { id: Date.now().toString(), jobTitle: '', company: '', location: '', startDate: '', endDate: '', description: '' };
-        setResumeData(prev => ({ ...prev, experience: [...prev.experience, newExperience] }));
+    const addCompany = useCallback(() => {
+        const newPosition: Position = { id: `${Date.now()}-pos`, jobTitle: '', startDate: '', endDate: '', description: '' };
+        const newCompany: CompanyExperience = { id: `${Date.now()}-comp`, company: '', location: '', positions: [newPosition] };
+        setResumeData(prev => ({ ...prev, experience: [...prev.experience, newCompany] }));
     }, [setResumeData]);
 
-    const removeExperience = useCallback((index: number) => {
-        const newExperience = resumeData.experience.filter((_, i) => i !== index);
+    const removeCompany = useCallback((companyIndex: number) => {
+        const newExperience = resumeData.experience.filter((_, i) => i !== companyIndex);
+        setResumeData(prev => ({ ...prev, experience: newExperience }));
+    }, [resumeData.experience, setResumeData]);
+
+    const addPosition = useCallback((companyIndex: number) => {
+        const newPosition: Position = { id: Date.now().toString(), jobTitle: '', startDate: '', endDate: '', description: '' };
+        const newExperience = [...resumeData.experience];
+        newExperience[companyIndex].positions.push(newPosition);
+        setResumeData(prev => ({ ...prev, experience: newExperience }));
+    }, [resumeData.experience, setResumeData]);
+
+    const removePosition = useCallback((companyIndex: number, positionIndex: number) => {
+        const newExperience = [...resumeData.experience];
+        const newPositions = newExperience[companyIndex].positions.filter((_, i) => i !== positionIndex);
+        newExperience[companyIndex].positions = newPositions;
         setResumeData(prev => ({ ...prev, experience: newExperience }));
     }, [resumeData.experience, setResumeData]);
 
@@ -164,7 +192,10 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({ resumeData, setResumeDat
     }, [setResumeData]);
     
     const refineSkills = useCallback(async () => {
-        const prompt = `Based on the following resume experience, suggest a comma-separated list of 10-15 relevant hard and soft skills. Do not add any introductory text. \n\nExperience: ${resumeData.experience.map(exp => `${exp.jobTitle}: ${exp.description}`).join('\n')}`;
+        const experienceText = resumeData.experience.map(comp => 
+            comp.positions.map(pos => `${pos.jobTitle}: ${pos.description}`).join('\n')
+        ).join('\n\n');
+        const prompt = `Based on the following resume experience, suggest a comma-separated list of 10-15 relevant hard and soft skills. Do not add any introductory text. \n\nExperience: ${experienceText}`;
         const refinedSkills = await refineTextWithAI(resumeData.skills.join(', '), prompt);
         setResumeData(prev => ({ ...prev, skills: refinedSkills.split(',').map(s => s.trim()) }));
     }, [resumeData.experience, resumeData.skills, setResumeData]);
@@ -195,49 +226,67 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({ resumeData, setResumeDat
       </AccordionSection>
 
       <AccordionSection title="Work Experience" isOpen={openSection === 'experience'} onToggle={() => handleToggle('experience')}>
-          {resumeData.experience.map((exp, index) => (
-              <div key={exp.id} className="p-4 border border-slate-200 rounded-lg space-y-4">
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <InputField label="Job Title" id={`jobTitle-${index}`} name="jobTitle" value={exp.jobTitle} onChange={(e) => handleExperienceChange(index, e)} placeholder="e.g., Software Engineer" />
+          {resumeData.experience.map((company, companyIndex) => (
+              <div key={company.id} className="p-4 border border-slate-200 rounded-lg space-y-4 bg-slate-50/50">
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                        <InputField label="Company" id={`company-${companyIndex}`} name="company" value={company.company} onChange={(e) => handleCompanyChange(companyIndex, e)} placeholder="e.g., Tech Innovations Inc." />
                         <div>
-                            <label htmlFor={`company-${index}`} className="block text-sm font-medium text-slate-700">Company</label>
+                            <label htmlFor={`location-${companyIndex}`} className="block text-sm font-medium text-slate-700">Location</label>
                             <div className="flex items-center gap-2 mt-1">
                                 <input
                                     type="text"
-                                    id={`company-${index}`}
-                                    name="company"
-                                    value={exp.company}
-                                    onChange={(e) => handleExperienceChange(index, e)}
-                                    placeholder="e.g., Tech Innovations Inc."
+                                    id={`location-${companyIndex}`}
+                                    name="location"
+                                    value={company.location}
+                                    onChange={(e) => handleCompanyChange(companyIndex, e)}
+                                    placeholder="e.g., San Francisco, CA"
                                     className="block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                 />
-                                <button onClick={() => removeExperience(index)} aria-label={`Remove ${exp.jobTitle} experience`} className="p-1.5 text-slate-400 hover:text-red-600 rounded-full hover:bg-red-100 transition-colors">
+                                <button onClick={() => removeCompany(companyIndex)} aria-label={`Remove ${company.company} experience`} className="p-1.5 text-slate-400 hover:text-red-600 rounded-full hover:bg-red-100 transition-colors">
                                     <TrashIcon className="w-5 h-5" />
                                 </button>
                             </div>
                         </div>
                    </div>
-                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div className="md:col-span-2">
-                             <InputField label="Location" id={`location-${index}`} name="location" value={exp.location} onChange={(e) => handleExperienceChange(index, e)} placeholder="e.g., San Francisco, CA" />
-                        </div>
-                        <InputField label="Start Date" id={`startDate-${index}`} name="startDate" value={exp.startDate} onChange={(e) => handleExperienceChange(index, e)} placeholder="e.g., Jan 2020" />
-                        <InputField label="End Date" id={`endDate-${index}`} name="endDate" value={exp.endDate} onChange={(e) => handleExperienceChange(index, e)} placeholder="e.g., Present" />
-                   </div>
-                  <TextAreaWithAI
-                    label="Description & Achievements"
-                    id={`description-${index}`}
-                    value={exp.description}
-                    onChange={(e) => handleExperienceChange(index, e)}
-                    onRefine={() => refineExperienceDescription(index)}
-                    placeholder="Describe your responsibilities and achievements in bullet points."
-                    rows={6}
-                    name="description"
-                   />
+
+                   {company.positions.map((pos, posIndex) => (
+                       <div key={pos.id} className="p-4 border border-slate-300/80 rounded-lg bg-white space-y-4">
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 items-end">
+                                <InputField label="Job Title" id={`jobTitle-${companyIndex}-${posIndex}`} name="jobTitle" value={pos.jobTitle} onChange={(e) => handlePositionChange(companyIndex, posIndex, e)} placeholder="e.g., Software Engineer" />
+                                <div className="flex justify-end">
+                                    <button
+                                        onClick={() => removePosition(companyIndex, posIndex)}
+                                        disabled={company.positions.length <= 1}
+                                        aria-label={`Remove ${pos.jobTitle} position`}
+                                        className="p-1.5 text-slate-400 hover:text-red-600 rounded-full hover:bg-red-100 transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400"
+                                    >
+                                        <TrashIcon className="w-5 h-5" />
+                                    </button>
+                                </div>
+                           </div>
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <InputField label="Start Date" id={`startDate-${companyIndex}-${posIndex}`} name="startDate" value={pos.startDate} onChange={(e) => handlePositionChange(companyIndex, posIndex, e)} placeholder="e.g., Jan 2020" />
+                                <InputField label="End Date" id={`endDate-${companyIndex}-${posIndex}`} name="endDate" value={pos.endDate} onChange={(e) => handlePositionChange(companyIndex, posIndex, e)} placeholder="e.g., Present" />
+                           </div>
+                           <TextAreaWithAI
+                                label="Description & Achievements"
+                                id={`description-${companyIndex}-${posIndex}`}
+                                name="description"
+                                value={pos.description}
+                                onChange={(e) => handlePositionChange(companyIndex, posIndex, e)}
+                                onRefine={() => refineExperienceDescription(companyIndex, posIndex)}
+                                placeholder="Describe your responsibilities and achievements in bullet points."
+                                rows={6}
+                           />
+                       </div>
+                   ))}
+                   <button onClick={() => addPosition(companyIndex)} className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-200/80 text-slate-600 text-sm font-semibold rounded-md hover:bg-slate-300/80 transition-colors">
+                       <PlusIcon className="w-4 h-4" /> Add Position
+                   </button>
               </div>
           ))}
-          <button onClick={addExperience} className="w-full flex items-center justify-center gap-2 mt-4 px-4 py-2 bg-slate-100 text-slate-700 font-semibold rounded-md hover:bg-slate-200 transition-colors">
-              <PlusIcon className="w-5 h-5" /> Add Experience
+          <button onClick={addCompany} className="w-full flex items-center justify-center gap-2 mt-4 px-4 py-2 bg-slate-100 text-slate-700 font-semibold rounded-md hover:bg-slate-200 transition-colors">
+              <PlusIcon className="w-5 h-5" /> Add Company
           </button>
       </AccordionSection>
       

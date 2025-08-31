@@ -1,237 +1,171 @@
 import React, { useState, useRef } from 'react';
 import { ResumeForm } from './components/ResumeForm';
 import ResumePreview from './components/ResumePreview';
-import type { ResumeData, Experience, Education } from './types';
+import type { ResumeData, CompanyExperience, Education, Position } from './types';
 import { PrintIcon, DownloadIcon, FileJsonIcon } from './components/icons';
 import { TemplateSelector } from './components/TemplateSelector';
 import { ResumeImporter } from './components/ResumeImporter';
 
 const initialResumeData: ResumeData = {
   personalInfo: {
-    name: 'Jane Doe',
-    email: 'jane.doe@email.com',
-    phone: '123-456-7890',
-    address: 'City, State',
-    linkedin: 'linkedin.com/in/janedoe',
-    website: 'janedoe.dev',
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    linkedin: '',
+    website: '',
   },
-  summary: 'A highly motivated and results-oriented professional with 5+ years of experience in software development. Proven ability to design, develop, and deploy high-quality web applications using modern technologies.',
-  experience: [
-    {
-      id: '1',
-      jobTitle: 'Senior Software Engineer',
-      company: 'Innovatech Solutions',
-      location: 'San Francisco, CA',
-      startDate: 'Jan 2021',
-      endDate: 'Present',
-      description: '- Led the development of a new customer-facing analytics dashboard, resulting in a 20% increase in user engagement.\n- Mentored junior developers, improving team productivity by 15%.\n- Optimized application performance, reducing page load times by 30%.',
-    },
-  ],
-  education: [
-    {
-      id: '1',
-      degree: 'B.S. in Computer Science',
-      school: 'University of Technology',
-      location: 'Techville, USA',
-      graduationDate: 'May 2018',
-    },
-  ],
-  skills: ['React', 'TypeScript', 'Node.js', 'PostgreSQL', 'AWS', 'Agile Methodologies', 'CI/CD'],
+  summary: '',
+  experience: [],
+  education: [],
+  skills: [],
 };
 
-const Header: React.FC<{ onPrint: () => void; onExport: () => void; }> = ({ onPrint, onExport }) => (
-  <header className="bg-white shadow-md p-4 flex justify-between items-center">
-    <div className="flex items-center gap-3">
-        <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
-            M
-        </div>
-        <h1 className="text-2xl font-bold text-slate-800">Mimir CV</h1>
-    </div>
-    <div className="flex items-center gap-4">
-        <button
-            onClick={onExport}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-600 text-white font-semibold rounded-md hover:bg-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500"
-        >
-            <DownloadIcon className="w-5 h-5" />
-            Export JSON
-        </button>
-        <button
-            onClick={onPrint}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        >
-            <PrintIcon className="w-5 h-5" />
-            Print / Download PDF
-        </button>
-    </div>
-  </header>
-);
+const Header: React.FC<{ 
+    onPrint: () => void; 
+    onExport: () => void; 
+    onImport: (e: React.ChangeEvent<HTMLInputElement>) => void 
+}> = ({ onPrint, onExport, onImport }) => {
+    const importInputRef = useRef<HTMLInputElement>(null);
+    return (
+        <header className="bg-white shadow-sm sticky top-0 z-10">
+            <div className="max-w-7xl mx-auto p-4 flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                    <h1 className="text-2xl font-bold text-slate-800">Mimir CV</h1>
+                </div>
+                <div className="flex items-center gap-2">
+                    <input type="file" ref={importInputRef} onChange={onImport} className="hidden" accept=".json" />
+                    <button onClick={() => importInputRef.current?.click()} className="flex items-center gap-2 px-4 py-2 bg-white text-slate-700 border border-slate-300 rounded-md hover:bg-slate-50 transition-colors text-sm font-medium">
+                        <FileJsonIcon className="w-5 h-5" />
+                        <span>Import JSON</span>
+                    </button>
+                    <button onClick={onExport} className="flex items-center gap-2 px-4 py-2 bg-white text-slate-700 border border-slate-300 rounded-md hover:bg-slate-50 transition-colors text-sm font-medium">
+                        <DownloadIcon className="w-5 h-5" />
+                        <span>Export JSON</span>
+                    </button>
+                    <button onClick={onPrint} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors text-sm font-medium">
+                        <PrintIcon className="w-5 h-5" />
+                        <span>Print / Save PDF</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+    );
+};
 
 type ImportedResumeData = Omit<ResumeData, 'experience' | 'education'> & {
-    experience: Omit<Experience, 'id'>[];
+    experience: (Omit<CompanyExperience, 'id' | 'positions'> & {
+        positions: Omit<Position, 'id'>[];
+    })[];
     education: Omit<Education, 'id'>[];
 };
 
-
 const App: React.FC = () => {
-  const [resumeData, setResumeData] = useState<ResumeData>(initialResumeData);
-  const [template, setTemplate] = useState<string>('classic');
-  const [importError, setImportError] = useState<string | null>(null);
-  const [importSuccessMessage, setImportSuccessMessage] = useState<string | null>(null);
-  const jsonInputRef = useRef<HTMLInputElement>(null);
-
-  const handlePrint = () => {
-      window.print();
-  };
-  
-  const handleExportJson = () => {
-    try {
-        const jsonString = JSON.stringify(resumeData, null, 2);
-        const blob = new Blob([jsonString], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "resume-data.json";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-    } catch (error) {
-        console.error("Failed to export JSON:", error);
-        setImportError("Could not export your data as JSON. Please try again.");
-    }
-  };
-
-  const handleImportSuccess = (importedData: ImportedResumeData) => {
-    const experienceWithIds = (importedData.experience || []).map((exp, index) => ({
-      ...exp,
-      id: `exp-${Date.now()}-${index}`,
-    }));
-    const educationWithIds = (importedData.education || []).map((edu, index) => ({
-      ...edu,
-      id: `edu-${Date.now()}-${index}`,
-    }));
-
-    const newResumeData = {
-      personalInfo: importedData.personalInfo || { name: '', email: '', phone: '', linkedin: '', website: '', address: '' },
-      summary: importedData.summary || '',
-      experience: experienceWithIds,
-      education: educationWithIds,
-      skills: importedData.skills || [],
+    const [resumeData, setResumeData] = useState<ResumeData>(initialResumeData);
+    const [template, setTemplate] = useState<string>('classic');
+    const [importError, setImportError] = useState<string | null>(null);
+    
+    const handlePrint = () => {
+        window.print();
     };
 
-    setResumeData(newResumeData);
-    setImportError(null);
-    setImportSuccessMessage('Successfully imported resume! Please review the populated fields below.');
-    setTimeout(() => setImportSuccessMessage(null), 5000); // Hide message after 5 seconds
-  };
+    const handleExportJson = () => {
+        const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
+            JSON.stringify(resumeData, null, 2)
+        )}`;
+        const link = document.createElement("a");
+        link.href = jsonString;
+        link.download = "resume.json";
+        link.click();
+    };
 
-  const handleImportError = (error: string | null) => {
-    setImportError(error);
-    setImportSuccessMessage(null);
-  };
-  
-  const handleJsonImportClick = () => {
-    jsonInputRef.current?.click();
-  };
-
-  const handleJsonFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        try {
-            const text = e.target?.result;
-            if (typeof text !== 'string') {
-                throw new Error("Failed to read file content.");
-            }
-            const data: Partial<ResumeData> = JSON.parse(text);
-
-            // Robust validation to prevent crashes from malformed JSON
-            if (
-                data &&
-                data.personalInfo &&
-                typeof data.personalInfo === 'object' &&
-                !Array.isArray(data.personalInfo) &&
-                typeof data.summary === 'string' &&
-                Array.isArray(data.experience) &&
-                Array.isArray(data.education) &&
-                Array.isArray(data.skills)
-            ) {
-                setResumeData(data as ResumeData);
-                setImportError(null);
-                setImportSuccessMessage('Successfully loaded data from JSON!');
-                setTimeout(() => setImportSuccessMessage(null), 5000);
-            } else {
-                throw new Error("JSON file does not have the expected resume data structure.");
-            }
-        } catch (error) {
-            handleImportError(error instanceof Error ? `Invalid JSON file: ${error.message}` : "Could not parse the JSON file.");
+    const handleImportJson = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const fileReader = new FileReader();
+        if (event.target.files && event.target.files[0]) {
+            fileReader.readAsText(event.target.files[0], "UTF-8");
+            fileReader.onload = e => {
+                try {
+                    if (e.target?.result) {
+                        const imported = JSON.parse(e.target.result as string) as ResumeData;
+                         const experienceWithIds = (imported.experience || []).map((company, cIdx) => ({
+                            ...company,
+                            id: company.id || `comp-import-${Date.now()}-${cIdx}`,
+                            positions: (company.positions || []).map((pos, pIdx) => ({
+                                ...pos,
+                                id: pos.id || `pos-import-${Date.now()}-${cIdx}-${pIdx}`
+                            }))
+                        }));
+                        const educationWithIds = (imported.education || []).map((edu, eIdx) => ({
+                            ...edu,
+                            id: edu.id || `edu-import-${Date.now()}-${eIdx}`
+                        }));
+                        setResumeData({ ...initialResumeData, ...imported, experience: experienceWithIds, education: educationWithIds, skills: imported.skills || [] });
+                        setImportError(null);
+                    }
+                } catch (err) {
+                    setImportError("Error parsing JSON file. Please ensure it's a valid resume format.");
+                }
+            };
         }
     };
-    reader.onerror = () => {
-        handleImportError("Failed to read the selected file.");
+
+    const handleImportSuccess = (importedData: ImportedResumeData) => {
+         const experienceWithIds = (importedData.experience || []).map((company, cIdx) => ({
+            ...company,
+            id: `comp-ai-${Date.now()}-${cIdx}`,
+            positions: (company.positions || []).map((pos, pIdx) => ({
+                ...pos,
+                id: `pos-ai-${Date.now()}-${cIdx}-${pIdx}`
+            }))
+        }));
+        const educationWithIds = (importedData.education || []).map((edu, eIdx) => ({
+            ...edu,
+            id: `edu-ai-${Date.now()}-${eIdx}`
+        }));
+        setResumeData({ ...initialResumeData, ...importedData, experience: experienceWithIds, education: educationWithIds, skills: importedData.skills || [] });
+        setImportError(null);
     };
 
-    reader.readAsText(file);
+    const isResumeEmpty = !resumeData.personalInfo.name && !resumeData.summary && resumeData.experience.length === 0 && resumeData.education.length === 0;
 
-    if (event.target) {
-        event.target.value = "";
-    }
-  };
-
-
-  return (
-    <div className="min-h-screen bg-slate-100 font-sans">
-        <Header onPrint={handlePrint} onExport={handleExportJson} />
-        <main id="main-content" className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-4 md:p-8">
-            <div className="bg-white rounded-xl shadow-lg h-full overflow-y-auto" style={{maxHeight: 'calc(100vh - 120px)'}}>
-                <div className="p-6 border-b border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <ResumeImporter onImportSuccess={handleImportSuccess} onImportError={handleImportError} />
-                    <div>
-                        <input
-                            type="file"
-                            ref={jsonInputRef}
-                            onChange={handleJsonFileChange}
-                            className="hidden"
-                            accept=".json"
-                            aria-hidden="true"
-                        />
-                        <button
-                            onClick={handleJsonImportClick}
-                            className="w-full h-full flex items-center justify-center gap-3 px-4 py-3 bg-slate-50 text-slate-700 font-semibold rounded-lg hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                        >
-                            <FileJsonIcon className="w-6 h-6" />
-                            <span>Import from JSON</span>
-                        </button>
-                    </div>
+    return (
+        <>
+            <Header onPrint={handlePrint} onExport={handleExportJson} onImport={handleImportJson} />
+            <main id="main-content" className="max-w-7xl mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-5 gap-8">
+                {/* Left Column: Form & Controls */}
+                <div className="space-y-6 lg:col-span-2">
+                    <TemplateSelector selectedTemplate={template} onSelect={setTemplate} />
+                    <ResumeForm resumeData={resumeData} setResumeData={setResumeData} />
                 </div>
 
-                {importError && (
-                    <div className="px-6 pb-2">
-                        <div className="p-4 border border-red-300 bg-red-50 text-red-700 rounded-md text-sm" role="alert">
-                            {importError}
-                        </div>
+                {/* Right Column: Preview */}
+                <div id="preview-wrapper" className="relative lg:col-span-3">
+                    <div className="sticky top-24 p-4 bg-slate-200/50 rounded-lg overflow-y-auto">
+                        {importError && (
+                            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm" role="alert">
+                                <p className="font-semibold">Import Failed</p>
+                                <p>{importError}</p>
+                            </div>
+                        )}
+                        {isResumeEmpty ? (
+                            <div className="p-8 bg-white rounded-lg shadow-inner border border-slate-200 flex flex-col items-center justify-center text-center h-[297mm]">
+                                <h2 className="text-xl font-semibold text-slate-700 mb-4">Your resume is empty</h2>
+                                <p className="text-slate-500 mb-6">Get started by importing your existing resume.</p>
+                                <ResumeImporter onImportSuccess={handleImportSuccess} onImportError={setImportError} />
+                            </div>
+                        ) : (
+                            <div 
+                                style={{ transform: 'scale(0.9)', transformOrigin: 'top center' }} 
+                                className="transition-transform duration-300"
+                            >
+                                <ResumePreview data={resumeData} template={template} />
+                            </div>
+                        )}
                     </div>
-                )}
-                {importSuccessMessage && (
-                    <div className="px-6 pb-2">
-                        <div className="p-4 border border-green-300 bg-green-50 text-green-800 rounded-md text-sm" role="status">
-                            {importSuccessMessage}
-                        </div>
-                    </div>
-                )}
-                <TemplateSelector selectedTemplate={template} onSelect={setTemplate} />
-                <ResumeForm resumeData={resumeData} setResumeData={setResumeData} />
-            </div>
-            <div id="preview-wrapper" className="lg:fixed lg:right-8 lg:top-[104px] lg:w-[calc(50%-48px)] lg:h-[calc(100vh-120px)]">
-                <div className="w-full h-full bg-slate-200 p-4 md:p-6 rounded-xl overflow-auto">
-                   <ResumePreview data={resumeData} template={template} />
                 </div>
-            </div>
-        </main>
-    </div>
-  );
+            </main>
+        </>
+    );
 };
 
 export default App;

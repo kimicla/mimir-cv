@@ -35,17 +35,21 @@ export const ClassicTemplate: React.FC<TemplateProps> = ({ data }) => {
         {experience.length > 0 && (
           <section className="mb-8">
             <h2 className="text-xl font-bold border-b border-gray-300 pb-1 mb-2 uppercase tracking-widest text-gray-900">Experience</h2>
-            {experience.map(exp => (
-              <div key={exp.id} className="mb-4 break-inside-avoid">
+            {experience.map(company => (
+              <div key={company.id} className="mb-6 break-inside-avoid">
                 <div className="flex justify-between items-baseline">
-                  <h3 className="text-lg font-semibold text-gray-800">{exp.jobTitle}</h3>
-                  <p className="text-sm font-light text-gray-600">{exp.startDate} - {exp.endDate}</p>
+                  <h3 className="text-lg font-semibold text-gray-800">{company.company}</h3>
+                  <p className="text-md italic text-gray-700">{company.location}</p>
                 </div>
-                <div className="mb-1">
-                    <p className="text-md italic text-gray-700">{exp.company}</p>
-                    <p className="text-sm font-light text-gray-600 text-right">{exp.location}</p>
-                </div>
-                <DescriptionRenderer text={exp.description} className="mt-1" />
+                {company.positions.map(pos => (
+                  <div key={pos.id} className="mt-2 pl-2">
+                    <div className="flex justify-between items-baseline">
+                      <h4 className="text-md font-semibold text-gray-700">{pos.jobTitle}</h4>
+                      <p className="text-sm font-light text-gray-600">{pos.startDate} - {pos.endDate}</p>
+                    </div>
+                    <DescriptionRenderer text={pos.description} className="mt-1" />
+                  </div>
+                ))}
               </div>
             ))}
           </section>

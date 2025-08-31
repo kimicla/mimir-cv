@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { ResumeData, Experience, Education } from "../types";
+import { ResumeData, CompanyExperience, Education, Position } from "../types";
 
 if (!process.env.API_KEY) {
   throw new Error("API_KEY environment variable is not set");
@@ -45,12 +45,20 @@ const resumeSchema = {
       items: {
         type: Type.OBJECT,
         properties: {
-          jobTitle: { type: Type.STRING },
           company: { type: Type.STRING },
           location: { type: Type.STRING },
-          startDate: { type: Type.STRING },
-          endDate: { type: Type.STRING },
-          description: { type: Type.STRING, description: "A description of responsibilities and achievements, with each bullet point separated by a newline character." },
+          positions: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                jobTitle: { type: Type.STRING },
+                startDate: { type: Type.STRING },
+                endDate: { type: Type.STRING },
+                description: { type: Type.STRING, description: "A description of responsibilities and achievements, with each bullet point separated by a newline character." },
+              }
+            }
+          }
         },
       },
     },
@@ -76,7 +84,9 @@ const resumeSchema = {
 
 
 type ParsedResumeData = Omit<ResumeData, 'experience' | 'education'> & {
-  experience: Omit<Experience, 'id'>[];
+  experience: (Omit<CompanyExperience, 'id' | 'positions'> & {
+    positions: Omit<Position, 'id'>[];
+  })[];
   education: Omit<Education, 'id'>[];
 };
 
@@ -91,9 +101,16 @@ export const parseResumeWithAI = (file: File): Promise<ParsedResumeData> => {
                 }
                 const base64Data = reader.result.split(',')[1];
                 
+                const prompt = `Analyze the attached resume image and extract the user's information.
+Your response MUST be a single, valid JSON object that strictly follows the schema provided.
+- Extract all personal information, professional summary, work experience, education, and skills.
+- If a field is not present in the resume, use an empty string or an empty array.
+- For descriptions (like in work experience), combine all bullet points into a single string, with each point separated by a '\\n' newline character.
+- Do NOT add any explanatory text, comments, or markdown formatting like \`\`\`json. Your entire response must be the raw JSON object itself.`;
+
                 const response = await ai.models.generateContent({
                   model: 'gemini-2.5-flash',
-                  contents: {
+                  contents: [{
                       parts: [
                           {
                               inlineData: {
@@ -102,10 +119,10 @@ export const parseResumeWithAI = (file: File): Promise<ParsedResumeData> => {
                               },
                           },
                           {
-                              text: "Extract the content from this resume and structure it according to the provided JSON schema. For experience descriptions, combine the bullet points into a single string with newline characters separating them. Ensure dates are concise, like 'Jan 2020' or 'Present'.",
+                              text: prompt,
                           },
                       ],
-                  },
+                  }],
                   config: {
                       responseMimeType: "application/json",
                       responseSchema: resumeSchema,
@@ -113,7 +130,20 @@ export const parseResumeWithAI = (file: File): Promise<ParsedResumeData> => {
                 });
 
                 const parsedJson = JSON.parse(response.text);
-                resolve(parsedJson);
+
+                // Normalize data to ensure all expected properties are present, preventing crashes.
+                const normalizedData = {
+                    personalInfo: parsedJson.personalInfo || {},
+                    summary: parsedJson.summary || '',
+                    experience: (parsedJson.experience || []).map((comp: any) => ({
+                        ...comp,
+                        positions: comp.positions || [], // Ensure nested positions array exists
+                    })),
+                    education: parsedJson.education || [],
+                    skills: parsedJson.skills || [],
+                };
+
+                resolve(normalizedData as ParsedResumeData);
 
             } catch (error) {
                  console.error("Error parsing resume with AI:", error);
