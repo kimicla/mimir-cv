@@ -61,7 +61,7 @@ export const DescriptionRenderer: React.FC<DescriptionRendererProps> = ({ text, 
             return (
                 <ul key={`ul-${index}`} className="list-disc list-outside ml-5 space-y-1 my-2">
                     {block.items.map((item, itemIndex) => (
-                        <li key={itemIndex}>{renderLineWithInlineFormatting(item)}</li>
+                        <li key={itemIndex} className="break-inside-avoid">{renderLineWithInlineFormatting(item)}</li>
                     ))}
                 </ul>
             );

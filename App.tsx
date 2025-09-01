@@ -22,7 +22,7 @@ const initialResumeData: ResumeData = {
   experience: [],
   education: [],
   skills: [],
-  sections: ['summary', 'experience', 'education', 'skills'],
+  sections: ['summary', 'skills', 'experience', 'education'],
 };
 
 const Header: React.FC<{ 
@@ -93,7 +93,6 @@ const App: React.FC = () => {
             return;
         }
 
-        // The scroll container is the direct parent of the resume element
         const scrollWrapper = element.parentElement;
         if (!scrollWrapper) {
             console.error("Scroll wrapper not found.");
@@ -102,18 +101,20 @@ const App: React.FC = () => {
 
         setIsPrinting(true);
 
-        // Store original styles
         const originalMaxHeight = scrollWrapper.style.maxHeight;
         const originalOverflowY = scrollWrapper.style.overflowY;
         const originalPadding = scrollWrapper.style.padding;
 
-        // Temporarily adjust styles for accurate PDF capture
+        // Add class to compensate for PDF margin on the first page
+        element.classList.add('pdf-print-margin-fix');
+
         scrollWrapper.style.padding = '0';
         scrollWrapper.style.maxHeight = 'none';
         scrollWrapper.style.overflowY = 'visible';
         
         const opt = {
-            margin: 0,
+            // Add a 10mm margin to the top and bottom of each PDF page.
+            margin: [10, 0, 10, 0],
             filename: `${resumeData.personalInfo.name.replace(/\s/g, '_').toLowerCase() || 'resume'}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: {
@@ -125,10 +126,12 @@ const App: React.FC = () => {
         };
 
         html2pdf().from(element).set(opt).save().finally(() => {
-            // Restore original styles
             scrollWrapper.style.padding = originalPadding;
             scrollWrapper.style.maxHeight = originalMaxHeight;
             scrollWrapper.style.overflowY = originalOverflowY;
+            
+            // Clean up the class after printing is complete
+            element.classList.remove('pdf-print-margin-fix');
             setIsPrinting(false);
         });
     };

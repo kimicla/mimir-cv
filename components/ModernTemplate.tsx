@@ -15,7 +15,7 @@ export const ModernTemplate: React.FC<TemplateProps> = ({ data }) => {
 
     const sectionContent: Record<SectionType, React.ReactNode> = {
         summary: summary ? (
-            <section key="summary" className="mb-8 break-inside-avoid">
+            <section key="summary" className="break-inside-avoid">
                 <p className="text-md text-slate-700 leading-relaxed italic">{summary}</p>
             </section>
         ) : null,
@@ -23,15 +23,15 @@ export const ModernTemplate: React.FC<TemplateProps> = ({ data }) => {
             <section key="experience">
                 <h2 className="text-xl font-bold text-slate-800 border-b-2 border-slate-200 pb-2 mb-4">Experience</h2>
                 {experience.map(company => (
-                    <div key={company.id} className="mb-6 break-inside-avoid">
+                    <div key={company.id} className={`mb-6 ${company.positions.length === 1 ? 'break-inside-avoid' : ''}`}>
                         <div className="flex justify-between items-baseline mb-1">
                             <h3 className="text-lg font-semibold text-slate-900">{company.company}</h3>
                             <p className="text-md text-slate-600">{company.location}</p>
                         </div>
                         {company.positions.map(pos => (
-                            <div key={pos.id} className={`mb-3 last:mb-0 ${company.positions.length > 1 ? 'break-inside-avoid' : ''}`}>
-                                <div className="flex justify-between items-baseline">
-                                    <h4 className="text-md font-semibold text-slate-800">{pos.jobTitle}</h4>
+                            <div key={pos.id} className="mb-3 last:mb-0">
+                                <div className="flex justify-between items-baseline break-after-avoid">
+                                    <h4 className="text-md font-bold text-slate-800">{pos.jobTitle}</h4>
                                     <p className="text-sm text-slate-500">{pos.startDate} - {pos.endDate}</p>
                                 </div>
                                 <DescriptionRenderer text={pos.description} className="mt-1 text-slate-600" />
@@ -89,7 +89,7 @@ export const ModernTemplate: React.FC<TemplateProps> = ({ data }) => {
             </aside>
 
             {/* Right Column */}
-            <main className="w-2/3 p-10">
+            <main className="w-2/3 p-10 space-y-8">
                 {mainSectionIds.map(id => sectionContent[id])}
             </main>
         </div>

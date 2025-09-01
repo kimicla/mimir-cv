@@ -30,6 +30,11 @@
       textarea::-webkit-scrollbar-thumb:hover {
         background: #94a3b8; /* slate-400 */
       }
+      
+      /* Used during PDF export to pull the first page up, canceling out the PDF's top margin. */
+      .pdf-print-margin-fix {
+        margin-top: -10mm;
+      }
     </style>
   <script type="importmap">
 {
