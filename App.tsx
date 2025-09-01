@@ -14,6 +14,7 @@ const initialResumeData: ResumeData = {
     address: '',
     linkedin: '',
     website: '',
+    photo: '',
   },
   summary: '',
   experience: [],
@@ -86,7 +87,7 @@ const App: React.FC = () => {
             fileReader.onload = e => {
                 try {
                     if (e.target?.result) {
-                        const imported = JSON.parse(e.target.result as string) as ResumeData;
+                        const imported = JSON.parse(e.target.result as string) as Partial<ResumeData>;
                          const experienceWithIds = (imported.experience || []).map((company, cIdx) => ({
                             ...company,
                             id: company.id || `comp-import-${Date.now()}-${cIdx}`,
@@ -99,7 +100,18 @@ const App: React.FC = () => {
                             ...edu,
                             id: edu.id || `edu-import-${Date.now()}-${eIdx}`
                         }));
-                        setResumeData({ ...initialResumeData, ...imported, experience: experienceWithIds, education: educationWithIds, skills: imported.skills || [] });
+
+                        setResumeData({
+                            ...initialResumeData,
+                            ...imported,
+                            personalInfo: {
+                                ...initialResumeData.personalInfo,
+                                ...(imported.personalInfo || {})
+                            },
+                            experience: experienceWithIds,
+                            education: educationWithIds,
+                            skills: imported.skills || []
+                        });
                         setImportError(null);
                     }
                 } catch (err) {
@@ -122,7 +134,18 @@ const App: React.FC = () => {
             ...edu,
             id: `edu-ai-${Date.now()}-${eIdx}`
         }));
-        setResumeData({ ...initialResumeData, ...importedData, experience: experienceWithIds, education: educationWithIds, skills: importedData.skills || [] });
+        
+        setResumeData({
+            ...initialResumeData,
+            ...importedData,
+            personalInfo: {
+                ...initialResumeData.personalInfo,
+                ...(importedData.personalInfo || {})
+            },
+            experience: experienceWithIds,
+            education: educationWithIds,
+            skills: importedData.skills || []
+        });
         setImportError(null);
     };
 

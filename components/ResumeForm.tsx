@@ -130,6 +130,22 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({ resumeData, setResumeDat
         setResumeData(prev => ({ ...prev, personalInfo: { ...prev.personalInfo, [id]: value } }));
     }, [setResumeData]);
 
+    const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                if (event.target?.result) {
+                    setResumeData(prev => ({ ...prev, personalInfo: { ...prev.personalInfo, photo: event.target.result as string } }));
+                }
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    };
+
+    const removePhoto = () => {
+        setResumeData(prev => ({ ...prev, personalInfo: { ...prev.personalInfo, photo: '' } }));
+    };
+
     const handleSummaryChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setResumeData(prev => ({ ...prev, summary: e.target.value }));
     }, [setResumeData]);
@@ -285,6 +301,28 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({ resumeData, setResumeDat
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
       <AccordionSection title="Personal Details" isOpen={openSection === 'personal'} onToggle={() => handleToggle('personal')}>
+          <div className="flex flex-col sm:flex-row items-center gap-6 mb-6 pb-6 border-b border-slate-200">
+              <div className="w-24 h-24 rounded-full bg-slate-200 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                  {resumeData.personalInfo.photo ? (
+                      <img src={resumeData.personalInfo.photo} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                      </svg>
+                  )}
+              </div>
+              <div className="space-y-2 flex flex-col items-center sm:items-start">
+                  <input type="file" id="photo-upload" className="hidden" accept="image/png, image/jpeg" onChange={handlePhotoChange} />
+                  <label htmlFor="photo-upload" className="cursor-pointer px-4 py-2 bg-white text-slate-700 border border-slate-300 rounded-md hover:bg-slate-50 transition-colors text-sm font-medium text-center">
+                      Upload Photo
+                  </label>
+                  {resumeData.personalInfo.photo && (
+                      <button onClick={removePhoto} className="flex items-center gap-1 px-4 py-2 text-red-600 hover:text-red-800 text-sm font-medium">
+                          <TrashIcon className="w-4 h-4" /> Remove
+                      </button>
+                  )}
+              </div>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <InputField label="Full Name" id="name" value={resumeData.personalInfo.name} onChange={handlePersonalInfoChange} placeholder="e.g., Jane Doe" />
               <InputField label="Email" id="email" value={resumeData.personalInfo.email} onChange={handlePersonalInfoChange} placeholder="e.g., jane.doe@example.com" type="email" />

@@ -11,16 +11,19 @@ export const CreativeTemplate: React.FC<TemplateProps> = ({ data }) => {
 
     return (
         <div className="p-10 font-sans text-gray-800 w-full">
-            <header className="flex flex-col sm:flex-row items-center justify-between bg-teal-600 text-white p-8 -mx-10 -mt-10 mb-8">
-                <div>
+            <header className="flex flex-col sm:flex-row items-center gap-6 bg-teal-600 text-white p-8 -mx-10 -mt-10 mb-8">
+                {personalInfo.photo && (
+                    <img src={personalInfo.photo} alt="Profile" className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-white/50 shadow-lg flex-shrink-0" />
+                )}
+                <div className="text-center sm:text-left">
                     {personalInfo.name && <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight">{personalInfo.name}</h1>}
-                </div>
-                <div className="text-right text-sm space-y-1 mt-4 sm:mt-0">
-                    {personalInfo.email && <div>{personalInfo.email}</div>}
-                    {personalInfo.phone && <div>{personalInfo.phone}</div>}
-                    {personalInfo.address && <div>{personalInfo.address}</div>}
-                    {personalInfo.linkedin && <a href={personalInfo.linkedin} className="text-white hover:underline break-all">{personalInfo.linkedin}</a>}
-                    {personalInfo.website && <a href={personalInfo.website} className="text-white hover:underline break-all">{personalInfo.website}</a>}
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1 text-sm mt-4 text-white/90">
+                        {personalInfo.email && <span>{personalInfo.email}</span>}
+                        {personalInfo.phone && <span>{personalInfo.phone}</span>}
+                        {personalInfo.address && <span>{personalInfo.address}</span>}
+                        {personalInfo.linkedin && <a href={personalInfo.linkedin} className="text-white hover:underline break-all">{personalInfo.linkedin}</a>}
+                        {personalInfo.website && <a href={personalInfo.website} className="text-white hover:underline break-all">{personalInfo.website}</a>}
+                    </div>
                 </div>
             </header>
 

@@ -5,6 +5,7 @@ export interface PersonalInfo {
   linkedin: string;
   website: string;
   address: string;
+  photo: string;
 }
 
 export interface Position {

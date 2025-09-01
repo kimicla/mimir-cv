@@ -13,14 +13,17 @@ export const ModernTemplate: React.FC<TemplateProps> = ({ data }) => {
         <div className="font-sans text-slate-800 w-full flex">
             {/* Left Column */}
             <aside className="w-1/3 bg-slate-50 p-8 flex flex-col gap-8">
-                <div>
+                <div className="text-center">
+                    {personalInfo.photo && (
+                        <img src={personalInfo.photo} alt="Profile" className="w-32 h-32 rounded-full object-cover shadow-md mx-auto mb-4" />
+                    )}
                     {personalInfo.name && <h1 className="text-3xl font-bold text-slate-900">{personalInfo.name}</h1>}
                 </div>
                 
                 <section>
                     <h2 className="text-sm font-bold uppercase text-slate-500 tracking-wider mb-3">Contact</h2>
                     <div className="space-y-2 text-sm text-slate-700">
-                        {personalInfo.email && <div>{personalInfo.email}</div>}
+                        {personalInfo.email && <div className="break-all">{personalInfo.email}</div>}
                         {personalInfo.phone && <div>{personalInfo.phone}</div>}
                         {personalInfo.address && <div>{personalInfo.address}</div>}
                         {personalInfo.linkedin && <a href={personalInfo.linkedin} className="block hover:text-indigo-600 break-all">{personalInfo.linkedin}</a>}
