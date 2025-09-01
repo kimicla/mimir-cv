@@ -62,7 +62,10 @@ export const CreativeTemplate: React.FC<TemplateProps> = ({ data }) => {
                                 <div key={edu.id} className="mb-4 break-inside-avoid">
                                     <h3 className="text-xl font-semibold text-gray-900">{edu.degree}</h3>
                                     <p className="text-md italic text-gray-600">{edu.school}</p>
-                                    <p className="text-sm font-medium text-gray-500">{edu.graduationDate}</p>
+                                    <div className="flex justify-between items-baseline text-sm text-gray-500">
+                                        <span>{edu.location}</span>
+                                        <span>{edu.graduationDate}</span>
+                                    </div>
                                 </div>
                             ))}
                         </section>
@@ -71,9 +74,9 @@ export const CreativeTemplate: React.FC<TemplateProps> = ({ data }) => {
                     {skills.length > 0 && skills[0] !== '' && (
                         <section>
                             <h2 className="text-2xl font-bold text-teal-700 mb-4 uppercase tracking-wider">Skills</h2>
-                            <div className="flex flex-wrap gap-3">
+                            <div className="flex flex-wrap gap-2">
                                 {skills.map((skill, index) => (
-                                    skill && <span key={index} className="bg-teal-100 text-teal-800 text-sm font-semibold px-4 py-1 rounded">{skill}</span>
+                                    skill && <span key={index} className="bg-teal-100 text-teal-800 text-sm font-medium px-4 py-1 rounded-full">{skill}</span>
                                 ))}
                             </div>
                         </section>
