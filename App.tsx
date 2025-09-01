@@ -6,6 +6,8 @@ import { PrintIcon, DownloadIcon, FileJsonIcon } from './components/icons';
 import { TemplateSelector } from './components/TemplateSelector';
 import { ResumeImporter } from './components/ResumeImporter';
 
+declare const html2pdf: any;
+
 const initialResumeData: ResumeData = {
   personalInfo: {
     name: '',
@@ -25,8 +27,9 @@ const initialResumeData: ResumeData = {
 const Header: React.FC<{ 
     onPrint: () => void; 
     onExport: () => void; 
-    onImport: (e: React.ChangeEvent<HTMLInputElement>) => void 
-}> = ({ onPrint, onExport, onImport }) => {
+    onImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    isPrinting: boolean;
+}> = ({ onPrint, onExport, onImport, isPrinting }) => {
     const importInputRef = useRef<HTMLInputElement>(null);
     return (
         <header className="bg-white shadow-sm sticky top-0 z-10">
@@ -44,9 +47,22 @@ const Header: React.FC<{
                         <DownloadIcon className="w-5 h-5" />
                         <span>Export JSON</span>
                     </button>
-                    <button onClick={onPrint} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors text-sm font-medium">
-                        <PrintIcon className="w-5 h-5" />
-                        <span>Print / Save PDF</span>
+                    <button
+                        onClick={onPrint}
+                        disabled={isPrinting}
+                        className="flex items-center justify-center gap-2 px-4 py-2 w-[180px] bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors text-sm font-medium disabled:bg-indigo-400 disabled:cursor-wait"
+                    >
+                        {isPrinting ? (
+                            <>
+                                <div className="w-5 h-5 border-2 border-white/50 border-t-white rounded-full animate-spin"></div>
+                                <span>Saving PDF...</span>
+                            </>
+                        ) : (
+                            <>
+                                <PrintIcon className="w-5 h-5" />
+                                <span>Print / Save PDF</span>
+                            </>
+                        )}
                     </button>
                 </div>
             </div>
@@ -65,9 +81,67 @@ const App: React.FC = () => {
     const [resumeData, setResumeData] = useState<ResumeData>(initialResumeData);
     const [template, setTemplate] = useState<string>('classic');
     const [importError, setImportError] = useState<string | null>(null);
+    const [isPrinting, setIsPrinting] = useState<boolean>(false);
     
     const handlePrint = () => {
-        window.print();
+        if (isPrinting) return;
+
+        const element = document.getElementById('resume-preview');
+        if (!element) {
+            console.error("Resume preview element not found.");
+            return;
+        }
+
+        // The element with the scale transform
+        const scaledWrapper = element.parentElement;
+        if (!scaledWrapper) {
+            console.error("Scaled wrapper not found.");
+            return;
+        }
+        
+        // The element with the scroll and max-height constraints
+        const scrollWrapper = scaledWrapper.parentElement;
+        if (!scrollWrapper) {
+            console.error("Scroll wrapper not found.");
+            return;
+        }
+
+        setIsPrinting(true);
+
+        // Store original styles
+        const originalTransform = scaledWrapper.style.transform;
+        const originalMaxHeight = scrollWrapper.style.maxHeight;
+        const originalOverflowY = scrollWrapper.style.overflowY;
+        const originalPadding = scrollWrapper.style.padding;
+
+        // Temporarily adjust styles for accurate PDF capture
+        // Resetting padding helps avoid potential margin issues in the capture
+        scrollWrapper.style.padding = '0';
+        scrollWrapper.style.maxHeight = 'none';
+        scrollWrapper.style.overflowY = 'visible';
+        scaledWrapper.style.transform = 'scale(1)';
+        
+
+        const opt = {
+            margin: 0,
+            filename: `${resumeData.personalInfo.name.replace(/\s/g, '_').toLowerCase() || 'resume'}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: {
+                scale: 2, // Use a slightly lower scale for better performance and stability
+                useCORS: true,
+                letterRendering: true,
+            },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        html2pdf().from(element).set(opt).save().finally(() => {
+            // Restore original styles
+            scrollWrapper.style.padding = originalPadding;
+            scrollWrapper.style.maxHeight = originalMaxHeight;
+            scrollWrapper.style.overflowY = originalOverflowY;
+            scaledWrapper.style.transform = originalTransform;
+            setIsPrinting(false);
+        });
     };
 
     const handleExportJson = () => {
@@ -153,7 +227,7 @@ const App: React.FC = () => {
 
     return (
         <>
-            <Header onPrint={handlePrint} onExport={handleExportJson} onImport={handleImportJson} />
+            <Header onPrint={handlePrint} onExport={handleExportJson} onImport={handleImportJson} isPrinting={isPrinting} />
             <main id="main-content" className="max-w-screen-2xl mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-5 gap-8">
                 {/* Left Column: Form & Controls */}
                 <div className="space-y-6 lg:col-span-2">

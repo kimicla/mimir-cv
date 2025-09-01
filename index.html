@@ -15,86 +15,6 @@
         width: 210mm;
       }
 
-      @media print {
-        /* 1. General page setup */
-        body {
-            background-color: #fff !important;
-        }
-
-        /* 2. Force printing of backgrounds and remove all shadows */
-        * {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-            box-shadow: none !important;
-            text-shadow: none !important;
-        }
-
-        /* 3. Hide all UI elements except the resume preview */
-        header, 
-        #main-content > div:first-child { /* Hides the app header and the left-hand form column */
-            display: none !important;
-        }
-
-        /* 4. Reset the entire layout to make the resume preview the only visible content */
-        #main-content,
-        #preview-wrapper {
-            display: block !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            gap: 0 !important;
-            position: static !important;
-        }
-        
-        #preview-wrapper > div,
-        #preview-wrapper > div > div {
-            position: static !important;
-            width: 100% !important;
-            height: auto !important;
-            max-height: none !important;     /* Override screen height limit */
-            overflow: visible !important;   /* Show all content to allow browser pagination */
-            padding: 0 !important;
-            margin: 0 !important;
-            background: transparent !important;
-            border: none !important;
-            border-radius: 0 !important;
-        }
-        
-        /* 5. Style the resume content itself for printing */
-        #resume-preview {
-            margin: 0 !important;
-            border: none !important;
-            transform: scale(1) !important;   /* Remove screen scaling effect */
-            width: 100% !important;           /* Ensure it fills the A4 page width */
-            height: auto !important;
-            background-color: #fff !important; /* This is the single background color. */
-        }
-        
-        /* 6. Unify background and text colors within the resume for a clean print */
-        /* Make all sub-element backgrounds transparent to reveal the white resume background */
-        #resume-preview * {
-            background-color: transparent !important;
-        }
-
-        /* Invert text color for elements that were on dark backgrounds (e.g., .text-white) */
-        #resume-preview .text-white,
-        #resume-preview .text-white a {
-            color: #1f2937 !important; /* Using a dark gray, like Tailwind's gray-800 */
-        }
-        
-        /* 7. Optimize content flow and page breaks for a professional look */
-        h1, h2, h3, h4, h5, h6 {
-            break-after: avoid; /* Prevent headings from being stranded at the bottom of a page */
-        }
-        
-        /* The templates already include `break-inside: avoid` on job/education blocks. */
-        
-        /* 8. Ensure links look clean and use the surrounding text color */
-        a[href] {
-            color: inherit !important;
-            text-decoration: none !important; /* Remove the default underline. */
-        }
-      }
-
       /* Custom scrollbar for textareas */
       textarea::-webkit-scrollbar {
         width: 8px;
@@ -124,6 +44,7 @@
 </head>
   <body class="bg-slate-50">
     <div id="root"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>
