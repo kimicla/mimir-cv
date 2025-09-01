@@ -90,6 +90,34 @@ const AccordionSection: React.FC<{ title: string; children: React.ReactNode; isO
     </div>
 );
 
+const parseExperienceDate = (dateStr?: string, isEndDate: boolean = false): Date => {
+    if (!dateStr || dateStr.trim() === '') {
+        return isEndDate ? new Date() : new Date(0); // Treat empty end date as "Present", empty start date as very old
+    }
+    const lowerDateStr = dateStr.toLowerCase().trim();
+    if (['present', 'current'].includes(lowerDateStr)) {
+        return new Date();
+    }
+    
+    const date = new Date(lowerDateStr);
+    if (!isNaN(date.getTime())) {
+        return date;
+    }
+    
+    const yearMatch = lowerDateStr.match(/\d{4}/);
+    if (yearMatch) {
+        const year = parseInt(yearMatch[0], 10);
+        const monthMatch = lowerDateStr.match(/(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i);
+        if (monthMatch) {
+            const monthIndex = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].indexOf(monthMatch[0].toLowerCase());
+            return new Date(year, monthIndex);
+        }
+        return new Date(year, 0);
+    }
+    
+    return new Date(0); // Fallback for unparseable strings
+};
+
 export const ResumeForm: React.FC<ResumeFormProps> = ({ resumeData, setResumeData }) => {
     const [openSection, setOpenSection] = useState<string | null>('personal');
 
@@ -110,7 +138,7 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({ resumeData, setResumeDat
         const experienceText = resumeData.experience.map(comp =>
             `Company: ${comp.company}\n` + comp.positions.map(pos => `${pos.jobTitle}: ${pos.description}`).join('\n')
         ).join('\n\n');
-        const prompt = `Based on the following resume data, write a professional and compelling summary of 2-4 sentences. Focus on key achievements and skills.\n\nExperience: ${experienceText}\n\nSkills: ${resumeData.skills.join(', ')}`;
+        const prompt = `Based on the following resume data, write a professional and compelling summary of 2-4 sentences. Focus on key achievements and skills. Your response must ONLY contain the summary text itself, without any introductory phrases or labels.\n\nExperience: ${experienceText}\n\nSkills: ${resumeData.skills.join(', ')}`;
         const refinedSummary = await refineTextWithAI(resumeData.summary || "A motivated professional", prompt);
         setResumeData(prev => ({ ...prev, summary: refinedSummary }));
     }, [resumeData.experience, resumeData.skills, resumeData.summary, setResumeData]);
@@ -134,7 +162,7 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({ resumeData, setResumeDat
     const refineExperienceDescription = useCallback(async (companyIndex: number, positionIndex: number) => {
         const pos = resumeData.experience[companyIndex]?.positions[positionIndex];
         if (!pos) return;
-        const prompt = "Rewrite the following resume description to be more impactful. Use action verbs, focus on quantifiable achievements, and list as bullet points (using '- ').";
+        const prompt = "Rewrite the following resume description to be more impactful. Use action verbs, focus on quantifiable achievements, and list as bullet points (using '- '). Your response must ONLY contain the bullet points, without any introductory sentences or explanations.";
         const refinedDescription = await refineTextWithAI(pos.description, prompt);
         
         const newExperience = [...resumeData.experience];
@@ -142,6 +170,58 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({ resumeData, setResumeDat
         newPositions[positionIndex] = { ...newPositions[positionIndex], description: refinedDescription };
         newExperience[companyIndex] = { ...newExperience[companyIndex], positions: newPositions };
         setResumeData(prev => ({ ...prev, experience: newExperience }));
+    }, [resumeData.experience, setResumeData]);
+    
+    const sortExperience = useCallback(() => {
+        type FlatPosition = {
+            companyInfo: Omit<CompanyExperience, 'positions'>;
+            position: Position;
+        };
+
+        const flatPositions: FlatPosition[] = resumeData.experience.flatMap(company => 
+            company.positions.map(position => ({
+                companyInfo: { id: company.id, company: company.company, location: company.location },
+                position
+            }))
+        );
+
+        flatPositions.sort((a, b) => {
+            const endDateA = parseExperienceDate(a.position.endDate, true);
+            const endDateB = parseExperienceDate(b.position.endDate, true);
+            if (endDateB.getTime() !== endDateA.getTime()) {
+                return endDateB.getTime() - endDateA.getTime();
+            }
+            const startDateA = parseExperienceDate(a.position.startDate, false);
+            const startDateB = parseExperienceDate(b.position.startDate, false);
+            return startDateB.getTime() - startDateA.getTime();
+        });
+
+        const sortedAndGroupedExperience: CompanyExperience[] = [];
+        if (flatPositions.length > 0) {
+            let currentGroup: CompanyExperience = {
+                id: `sorted-comp-${Date.now()}-0`,
+                company: flatPositions[0].companyInfo.company,
+                location: flatPositions[0].companyInfo.location,
+                positions: [flatPositions[0].position],
+            };
+
+            for (let i = 1; i < flatPositions.length; i++) {
+                const flatPos = flatPositions[i];
+                if (flatPos.companyInfo.company === currentGroup.company && flatPos.companyInfo.location === currentGroup.location) {
+                    currentGroup.positions.push(flatPos.position);
+                } else {
+                    sortedAndGroupedExperience.push(currentGroup);
+                    currentGroup = {
+                        id: `sorted-comp-${Date.now()}-${i}`,
+                        company: flatPos.companyInfo.company,
+                        location: flatPos.companyInfo.location,
+                        positions: [flatPos.position],
+                    };
+                }
+            }
+            sortedAndGroupedExperience.push(currentGroup);
+        }
+        setResumeData(prev => ({ ...prev, experience: sortedAndGroupedExperience }));
     }, [resumeData.experience, setResumeData]);
 
     const addCompany = useCallback(() => {
@@ -195,10 +275,12 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({ resumeData, setResumeDat
         const experienceText = resumeData.experience.map(comp => 
             comp.positions.map(pos => `${pos.jobTitle}: ${pos.description}`).join('\n')
         ).join('\n\n');
-        const prompt = `Based on the following resume experience, suggest a comma-separated list of 10-15 relevant hard and soft skills. Do not add any introductory text. \n\nExperience: ${experienceText}`;
+        const prompt = `Based on the following resume experience, suggest a comma-separated list of 10-15 relevant hard and soft skills. Your response must ONLY be the comma-separated list of skills, without any introductory text or explanations.\n\nExperience: ${experienceText}`;
         const refinedSkills = await refineTextWithAI(resumeData.skills.join(', '), prompt);
         setResumeData(prev => ({ ...prev, skills: refinedSkills.split(',').map(s => s.trim()) }));
     }, [resumeData.experience, resumeData.skills, setResumeData]);
+
+  const totalPositions = resumeData.experience.reduce((acc, comp) => acc + comp.positions.length, 0);
 
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
@@ -226,6 +308,15 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({ resumeData, setResumeDat
       </AccordionSection>
 
       <AccordionSection title="Work Experience" isOpen={openSection === 'experience'} onToggle={() => handleToggle('experience')}>
+          <div className="flex justify-end mb-4 -mt-2">
+            <button
+                onClick={sortExperience}
+                disabled={totalPositions < 2}
+                className="px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-semibold rounded-md hover:bg-slate-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+                Sort by Date (Newest First)
+            </button>
+          </div>
           {resumeData.experience.map((company, companyIndex) => (
               <div key={company.id} className="p-4 border border-slate-200 rounded-lg space-y-4 bg-slate-50/50">
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">

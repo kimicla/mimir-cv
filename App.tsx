@@ -29,7 +29,7 @@ const Header: React.FC<{
     const importInputRef = useRef<HTMLInputElement>(null);
     return (
         <header className="bg-white shadow-sm sticky top-0 z-10">
-            <div className="max-w-7xl mx-auto p-4 flex justify-between items-center">
+            <div className="max-w-screen-2xl mx-auto p-4 flex justify-between items-center">
                 <div className="flex items-center gap-2">
                     <h1 className="text-2xl font-bold text-slate-800">Mimir CV</h1>
                 </div>
@@ -131,7 +131,7 @@ const App: React.FC = () => {
     return (
         <>
             <Header onPrint={handlePrint} onExport={handleExportJson} onImport={handleImportJson} />
-            <main id="main-content" className="max-w-7xl mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-5 gap-8">
+            <main id="main-content" className="max-w-screen-2xl mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-5 gap-8">
                 {/* Left Column: Form & Controls */}
                 <div className="space-y-6 lg:col-span-2">
                     <TemplateSelector selectedTemplate={template} onSelect={setTemplate} />
@@ -140,7 +140,7 @@ const App: React.FC = () => {
 
                 {/* Right Column: Preview */}
                 <div id="preview-wrapper" className="relative lg:col-span-3">
-                    <div className="sticky top-24 p-4 bg-slate-200/50 rounded-lg overflow-y-auto">
+                    <div className="sticky top-24 p-4 bg-slate-200/50 rounded-lg overflow-y-auto overflow-x-hidden max-h-[calc(100vh-8rem)]">
                         {importError && (
                             <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm" role="alert">
                                 <p className="font-semibold">Import Failed</p>

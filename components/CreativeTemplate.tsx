@@ -19,8 +19,8 @@ export const CreativeTemplate: React.FC<TemplateProps> = ({ data }) => {
                     {personalInfo.email && <div>{personalInfo.email}</div>}
                     {personalInfo.phone && <div>{personalInfo.phone}</div>}
                     {personalInfo.address && <div>{personalInfo.address}</div>}
-                    {personalInfo.linkedin && <a href={personalInfo.linkedin} className="text-white hover:underline">{personalInfo.linkedin}</a>}
-                    {personalInfo.website && <a href={personalInfo.website} className="text-white hover:underline">{personalInfo.website}</a>}
+                    {personalInfo.linkedin && <a href={personalInfo.linkedin} className="text-white hover:underline break-all">{personalInfo.linkedin}</a>}
+                    {personalInfo.website && <a href={personalInfo.website} className="text-white hover:underline break-all">{personalInfo.website}</a>}
                 </div>
             </header>
 

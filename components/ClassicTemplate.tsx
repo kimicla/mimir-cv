@@ -19,8 +19,8 @@ export const ClassicTemplate: React.FC<TemplateProps> = ({ data }) => {
           {personalInfo.address && <span className="before:content-['|'] before:mr-4">{personalInfo.address}</span>}
         </div>
         <div className="flex justify-center items-center flex-wrap space-x-4 mt-1 text-xs text-blue-700">
-          {personalInfo.linkedin && <a href={personalInfo.linkedin} target="_blank" rel="noopener noreferrer">{personalInfo.linkedin}</a>}
-          {personalInfo.website && <span className="before:content-['|'] before:mr-4"><a href={personalInfo.website} target="_blank" rel="noopener noreferrer">{personalInfo.website}</a></span>}
+          {personalInfo.linkedin && <a href={personalInfo.linkedin} target="_blank" rel="noopener noreferrer" className="break-all">{personalInfo.linkedin}</a>}
+          {personalInfo.website && <span className="before:content-['|'] before:mr-4"><a href={personalInfo.website} target="_blank" rel="noopener noreferrer" className="break-all">{personalInfo.website}</a></span>}
         </div>
       </header>
 
