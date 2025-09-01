@@ -12,7 +12,7 @@ export const ModernTemplate: React.FC<TemplateProps> = ({ data }) => {
     return (
         <div className="font-sans text-slate-800 w-full flex">
             {/* Left Column */}
-            <aside className="w-1/3 bg-slate-50 p-8 flex flex-col gap-8">
+            <aside className="w-1/3 bg-slate-50 p-10 flex flex-col gap-8">
                 <div className="text-center">
                     {personalInfo.photo && (
                         <img src={personalInfo.photo} alt="Profile" className="w-32 h-32 rounded-full object-cover shadow-md mx-auto mb-4" />
@@ -35,7 +35,7 @@ export const ModernTemplate: React.FC<TemplateProps> = ({ data }) => {
                     <section>
                         <h2 className="text-sm font-bold uppercase text-slate-500 tracking-wider mb-3">Education</h2>
                         {education.map(edu => (
-                            <div key={edu.id} className="mb-4 break-inside-avoid">
+                            <div key={edu.id} className="mb-4">
                                 <h3 className="font-semibold text-slate-800">{edu.degree}</h3>
                                 <p className="text-sm text-slate-600">{edu.school}</p>
                                 <p className="text-xs text-slate-500">{edu.graduationDate}</p>
@@ -55,7 +55,7 @@ export const ModernTemplate: React.FC<TemplateProps> = ({ data }) => {
             </aside>
 
             {/* Right Column */}
-            <main className="w-2/3 p-8">
+            <main className="w-2/3 p-10">
                 {summary && (
                     <section className="mb-8">
                         <p className="text-md text-slate-700 leading-relaxed italic">{summary}</p>
@@ -66,13 +66,13 @@ export const ModernTemplate: React.FC<TemplateProps> = ({ data }) => {
                     <section>
                         <h2 className="text-xl font-bold text-slate-800 border-b-2 border-slate-200 pb-2 mb-4">Experience</h2>
                         {experience.map(company => (
-                            <div key={company.id} className="mb-6 break-inside-avoid">
+                            <div key={company.id} className={`mb-6 ${company.positions.length === 1 ? 'break-inside-avoid' : ''}`}>
                                 <div className="flex justify-between items-baseline mb-1">
                                     <h3 className="text-lg font-semibold text-slate-900">{company.company}</h3>
                                     <p className="text-md text-slate-600">{company.location}</p>
                                 </div>
                                 {company.positions.map(pos => (
-                                    <div key={pos.id} className="mb-3 last:mb-0">
+                                    <div key={pos.id} className={`mb-3 last:mb-0 ${company.positions.length > 1 ? 'break-inside-avoid' : ''}`}>
                                         <div className="flex justify-between items-baseline">
                                             <h4 className="text-md font-semibold text-slate-800">{pos.jobTitle}</h4>
                                             <p className="text-sm text-slate-500">{pos.startDate} - {pos.endDate}</p>

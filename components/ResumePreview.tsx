@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import type { ResumeData } from '../types';
 import { ClassicTemplate } from './ClassicTemplate';
 import { ModernTemplate } from './ModernTemplate';
@@ -10,7 +10,7 @@ interface ResumePreviewProps {
 }
 
 const ResumePreview: React.FC<ResumePreviewProps> = ({ data, template }) => {
-  const renderTemplate = () => {
+  const templateComponent = useMemo(() => {
     switch (template) {
       case 'modern':
         return <ModernTemplate data={data} />;
@@ -20,14 +20,11 @@ const ResumePreview: React.FC<ResumePreviewProps> = ({ data, template }) => {
       default:
         return <ClassicTemplate data={data} />;
     }
-  };
+  }, [data, template]);
 
   return (
-    <div 
-      id="resume-preview" 
-      className="a4-width bg-white shadow-lg mx-auto"
-    >
-      {renderTemplate()}
+    <div id="resume-preview" className="a4-width bg-white shadow-lg">
+      {templateComponent}
     </div>
   );
 };

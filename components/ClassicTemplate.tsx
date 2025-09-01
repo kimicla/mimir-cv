@@ -10,7 +10,7 @@ export const ClassicTemplate: React.FC<TemplateProps> = ({ data }) => {
   const { personalInfo, summary, experience, education, skills } = data;
 
   return (
-    <div className="p-8 md:p-12 font-serif text-gray-800 w-full">
+    <div className="p-12 md:p-16 font-serif text-gray-800 w-full">
       <header className="flex justify-between items-start border-b-2 border-gray-300 pb-4 mb-6">
         <div className="text-left">
             {personalInfo.name && <h1 className="text-4xl font-bold tracking-wider uppercase text-gray-900">{personalInfo.name}</h1>}
@@ -41,13 +41,13 @@ export const ClassicTemplate: React.FC<TemplateProps> = ({ data }) => {
           <section className="mb-8">
             <h2 className="text-xl font-bold border-b border-gray-300 pb-1 mb-2 uppercase tracking-widest text-gray-900">Experience</h2>
             {experience.map(company => (
-              <div key={company.id} className="mb-6 break-inside-avoid">
+              <div key={company.id} className={`mb-6 ${company.positions.length === 1 ? 'break-inside-avoid' : ''}`}>
                 <div className="flex justify-between items-baseline">
                   <h3 className="text-lg font-semibold text-gray-800">{company.company}</h3>
                   <p className="text-md italic text-gray-700">{company.location}</p>
                 </div>
                 {company.positions.map(pos => (
-                  <div key={pos.id} className="mt-2 pl-2">
+                  <div key={pos.id} className={`mt-2 pl-2 ${company.positions.length > 1 ? 'break-inside-avoid' : ''}`}>
                     <div className="flex justify-between items-baseline">
                       <h4 className="text-md font-semibold text-gray-700">{pos.jobTitle}</h4>
                       <p className="text-sm font-light text-gray-600">{pos.startDate} - {pos.endDate}</p>
@@ -64,7 +64,7 @@ export const ClassicTemplate: React.FC<TemplateProps> = ({ data }) => {
           <section className="mb-8">
             <h2 className="text-xl font-bold border-b border-gray-300 pb-1 mb-2 uppercase tracking-widest text-gray-900">Education</h2>
             {education.map(edu => (
-              <div key={edu.id} className="mb-2 break-inside-avoid">
+              <div key={edu.id} className="mb-2">
                 <div className="flex justify-between items-baseline">
                   <h3 className="text-lg font-semibold text-gray-800">{edu.degree}</h3>
                   <p className="text-sm font-light text-gray-600">{edu.graduationDate}</p>

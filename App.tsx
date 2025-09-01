@@ -92,15 +92,8 @@ const App: React.FC = () => {
             return;
         }
 
-        // The element with the scale transform
-        const scaledWrapper = element.parentElement;
-        if (!scaledWrapper) {
-            console.error("Scaled wrapper not found.");
-            return;
-        }
-        
-        // The element with the scroll and max-height constraints
-        const scrollWrapper = scaledWrapper.parentElement;
+        // The scroll container is the direct parent of the resume element
+        const scrollWrapper = element.parentElement;
         if (!scrollWrapper) {
             console.error("Scroll wrapper not found.");
             return;
@@ -109,25 +102,21 @@ const App: React.FC = () => {
         setIsPrinting(true);
 
         // Store original styles
-        const originalTransform = scaledWrapper.style.transform;
         const originalMaxHeight = scrollWrapper.style.maxHeight;
         const originalOverflowY = scrollWrapper.style.overflowY;
         const originalPadding = scrollWrapper.style.padding;
 
         // Temporarily adjust styles for accurate PDF capture
-        // Resetting padding helps avoid potential margin issues in the capture
         scrollWrapper.style.padding = '0';
         scrollWrapper.style.maxHeight = 'none';
         scrollWrapper.style.overflowY = 'visible';
-        scaledWrapper.style.transform = 'scale(1)';
         
-
         const opt = {
             margin: 0,
             filename: `${resumeData.personalInfo.name.replace(/\s/g, '_').toLowerCase() || 'resume'}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: {
-                scale: 2, // Use a slightly lower scale for better performance and stability
+                scale: 2,
                 useCORS: true,
                 letterRendering: true,
             },
@@ -139,7 +128,6 @@ const App: React.FC = () => {
             scrollWrapper.style.padding = originalPadding;
             scrollWrapper.style.maxHeight = originalMaxHeight;
             scrollWrapper.style.overflowY = originalOverflowY;
-            scaledWrapper.style.transform = originalTransform;
             setIsPrinting(false);
         });
     };
@@ -251,12 +239,7 @@ const App: React.FC = () => {
                                 <ResumeImporter onImportSuccess={handleImportSuccess} onImportError={setImportError} />
                             </div>
                         ) : (
-                            <div 
-                                style={{ transform: 'scale(0.9)', transformOrigin: 'top center' }} 
-                                className="transition-transform duration-300"
-                            >
-                                <ResumePreview data={resumeData} template={template} />
-                            </div>
+                           <ResumePreview data={resumeData} template={template} />
                         )}
                     </div>
                 </div>
