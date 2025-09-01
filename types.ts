@@ -31,10 +31,13 @@ export interface Education {
   graduationDate: string;
 }
 
+export type SectionType = 'summary' | 'experience' | 'education' | 'skills';
+
 export interface ResumeData {
   personalInfo: PersonalInfo;
   summary: string;
   experience: CompanyExperience[];
   education: Education[];
   skills: string[];
+  sections: SectionType[];
 }

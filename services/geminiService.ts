@@ -83,7 +83,7 @@ const resumeSchema = {
 };
 
 
-type ParsedResumeData = Omit<ResumeData, 'experience' | 'education'> & {
+type ParsedResumeData = Omit<ResumeData, 'experience' | 'education' | 'sections'> & {
   experience: (Omit<CompanyExperience, 'id' | 'positions'> & {
     positions: Omit<Position, 'id'>[];
   })[];

@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { ResumeForm } from './components/ResumeForm';
 import ResumePreview from './components/ResumePreview';
-import type { ResumeData, CompanyExperience, Education, Position } from './types';
+import type { ResumeData, CompanyExperience, Education, Position, SectionType } from './types';
 import { PrintIcon, DownloadIcon, FileJsonIcon } from './components/icons';
 import { TemplateSelector } from './components/TemplateSelector';
 import { ResumeImporter } from './components/ResumeImporter';
@@ -22,6 +22,7 @@ const initialResumeData: ResumeData = {
   experience: [],
   education: [],
   skills: [],
+  sections: ['summary', 'experience', 'education', 'skills'],
 };
 
 const Header: React.FC<{ 
@@ -70,7 +71,7 @@ const Header: React.FC<{
     );
 };
 
-type ImportedResumeData = Omit<ResumeData, 'experience' | 'education'> & {
+type ImportedResumeData = Omit<ResumeData, 'experience' | 'education' | 'sections'> & {
     experience: (Omit<CompanyExperience, 'id' | 'positions'> & {
         positions: Omit<Position, 'id'>[];
     })[];
@@ -172,7 +173,8 @@ const App: React.FC = () => {
                             },
                             experience: experienceWithIds,
                             education: educationWithIds,
-                            skills: imported.skills || []
+                            skills: imported.skills || [],
+                            sections: imported.sections || initialResumeData.sections,
                         });
                         setImportError(null);
                     }
@@ -206,7 +208,8 @@ const App: React.FC = () => {
             },
             experience: experienceWithIds,
             education: educationWithIds,
-            skills: importedData.skills || []
+            skills: importedData.skills || [],
+            sections: initialResumeData.sections, // Use default order on AI import
         });
         setImportError(null);
     };

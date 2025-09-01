@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 const A4_HEIGHT_MM = 297;
-const A4_WIDTH_MM = 210;
 const MM_TO_PX = 3.7795275591; // Based on 96 DPI
 
 interface PagedPreviewProps {
@@ -34,7 +33,6 @@ const findElementByPath = (root: Element, path: number[]): Element | null => {
     return current;
 };
 
-
 export const PagedPreview: React.FC<PagedPreviewProps> = ({ children }) => {
     const [pages, setPages] = useState<string[]>([]);
     const [sourceClassName, setSourceClassName] = useState('');
@@ -48,27 +46,21 @@ export const PagedPreview: React.FC<PagedPreviewProps> = ({ children }) => {
             const sourceNode = sourceRef.current.children[0] as HTMLElement;
             setSourceClassName(sourceNode.className);
 
-            const PAGE_HEIGHT = (A4_HEIGHT_MM * MM_TO_PX) - 1; // -1 for safety margin
+            const PAGE_HEIGHT_PX = (A4_HEIGHT_MM * MM_TO_PX) - (parseFloat(getComputedStyle(sourceNode).paddingTop) * 2);
 
-            // Create a shell for subsequent pages where the header is removed.
             const subsequentPageShell = sourceNode.cloneNode(true) as HTMLElement;
             const headerInSection = subsequentPageShell.querySelector('[data-page-header]');
             if (headerInSection) {
-                // Remove the header content to prevent it from appearing on page 2+
                 headerInSection.innerHTML = '';
-                // Additionally, remove padding/margins/borders that might remain to prevent empty space
                 headerInSection.setAttribute('style', 'padding: 0; margin: 0; border: none; height: 0; overflow: hidden;');
             }
 
-
-            // Step 1: Get all fine-grained content nodes we want to paginate.
-            const contentNodes = Array.from(sourceNode.querySelectorAll('.break-inside-avoid, main > section > div, aside > section > div, main > .grid > div > section'));
+            const contentNodes = Array.from(sourceNode.querySelectorAll('.break-inside-avoid, [data-breakable]'));
             if (contentNodes.length === 0) {
                  if (sourceNode.innerHTML) setPages([sourceNode.innerHTML]);
                  return;
             }
 
-            // Create a map of parent elements to their paths and children nodes.
             const parentMap = new Map<Element, { path: number[], nodes: Element[] }>();
             for (const node of contentNodes) {
                 const parent = node.parentElement;
@@ -83,10 +75,9 @@ export const PagedPreview: React.FC<PagedPreviewProps> = ({ children }) => {
             const newPages: string[] = [];
             let pageShell = sourceNode.cloneNode(true) as HTMLElement;
             
-            // Empty all content from the shell.
             parentMap.forEach(({ path }) => {
                 const parentInShell = findElementByPath(pageShell, path);
-                if (parentInShell) parentInShell.replaceChildren();
+                if (parentInShell) parentInShell.innerHTML = '';
             });
             
             let pageIsEmpty = true;
@@ -95,10 +86,9 @@ export const PagedPreview: React.FC<PagedPreviewProps> = ({ children }) => {
             measureDiv.style.position = 'absolute';
             measureDiv.style.visibility = 'hidden';
             measureDiv.style.pointerEvents = 'none';
-            measureDiv.style.width = `${A4_WIDTH_MM * MM_TO_PX}px`;
+            measureDiv.style.width = getComputedStyle(sourceNode).width;
             document.body.appendChild(measureDiv);
             
-            // Step 2: Iterate through content nodes and distribute them into pages.
             for (const parent of parentMap.keys()) {
                 const { path, nodes } = parentMap.get(parent)!;
                 
@@ -110,44 +100,36 @@ export const PagedPreview: React.FC<PagedPreviewProps> = ({ children }) => {
                     measureDiv.className = sourceNode.className;
                     measureDiv.innerHTML = pageShell.innerHTML;
 
-                    if (measureDiv.scrollHeight > PAGE_HEIGHT) {
-                        if (!pageIsEmpty) {
-                            // Page is not empty, so this node caused the overflow.
-                            // 1. Remove the node from the current page shell.
+                    if (measureDiv.scrollHeight > PAGE_HEIGHT_PX) {
+                         if (!pageIsEmpty) {
                             parentInShell.removeChild(parentInShell.lastChild!);
-                            
-                            // 2. Finalize and push the current page.
                             newPages.push(pageShell.innerHTML);
 
-                            // 3. Start a new page shell using the header-less version.
                             pageShell = subsequentPageShell.cloneNode(true) as HTMLElement;
                             parentMap.forEach(({ path: pPath }) => {
                                 const pInShell = findElementByPath(pageShell, pPath);
-                                if (pInShell) pInShell.replaceChildren();
+                                if (pInShell) pInShell.innerHTML = '';
                             });
                             
-                            // 4. Add the overflowing node to the new page.
                             const newParentInShell = findElementByPath(pageShell, path);
                             if (newParentInShell) newParentInShell.appendChild(node.cloneNode(true));
                             pageIsEmpty = false;
                             continue;
                         }
                     }
-                    pageIsEmpty = false;
+                     pageIsEmpty = false;
                 }
             }
             
-            // Push the last page if it has content.
             const finalMeasureDiv = document.createElement('div');
             finalMeasureDiv.innerHTML = pageShell.innerHTML;
-            // Check for any visible content, not just whitespace
             if (finalMeasureDiv.textContent?.trim()) {
                  newPages.push(pageShell.innerHTML);
             }
            
             document.body.removeChild(measureDiv);
-            setPages(newPages);
-        }, 300); // Debounce
+            setPages(newPages.length > 0 ? newPages : [sourceNode.innerHTML]);
+        }, 500); // Debounce to wait for user to stop typing
 
         return () => clearTimeout(timer);
     }, [children]);
@@ -156,7 +138,7 @@ export const PagedPreview: React.FC<PagedPreviewProps> = ({ children }) => {
 
     return (
         <>
-            <div ref={sourceRef} style={{ position: 'absolute', zIndex: -1, opacity: 0, pointerEvents: 'none', width: `${A4_WIDTH_MM * MM_TO_PX}px` }}>
+            <div ref={sourceRef} style={{ position: 'absolute', zIndex: -1, opacity: 0, pointerEvents: 'none' }}>
                 {children}
             </div>
 
@@ -172,7 +154,7 @@ export const PagedPreview: React.FC<PagedPreviewProps> = ({ children }) => {
                     ))
                 ) : (
                    <div 
-                       className={`${sourceClassName || ''} a4-width bg-white shadow-lg flex items-center justify-center`}
+                       className="a4-width bg-white shadow-lg flex items-center justify-center"
                        style={{ height: `${A4_HEIGHT_MM}mm` }}
                    >
                        <div className="w-8 h-8 border-4 border-slate-300 border-t-indigo-500 rounded-full animate-spin"></div>

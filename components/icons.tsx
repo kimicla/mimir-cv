@@ -2,7 +2,7 @@ import React from 'react';
 
 export const SparklesIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg
-    xmlns="http://www.w.org/2000/svg"
+    xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 20 20"
     fill="currentColor"
     className={className}
@@ -17,7 +17,7 @@ export const SparklesIcon: React.FC<{ className?: string }> = ({ className }) =>
 
 export const PlusIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg
-    xmlns="http://www.w.org/2000/svg"
+    xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 20 20"
     fill="currentColor"
     className={className}
@@ -30,7 +30,7 @@ export const PlusIcon: React.FC<{ className?: string }> = ({ className }) => (
 
 export const TrashIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg
-    xmlns="http://www.w.org/2000/svg"
+    xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 20 20"
     fill="currentColor"
     className={className}
@@ -68,5 +68,11 @@ export const FileJsonIcon: React.FC<{ className?: string }> = ({ className }) =>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={className}>
         <path fillRule="evenodd" d="M10 2a.75.75 0 0 1 .75.75v2.564a.75.75 0 0 1-1.5 0V2.75A.75.75 0 0 1 10 2Zm-2.25 4.75a.75.75 0 0 0-1.5 0v4.332l-.54-.154a.75.75 0 0 0-.82 1.25l1.75 3.5a.75.75 0 0 0 1.342-.671L8.5 9.423V6.75Zm5 0a.75.75 0 0 1 1.5 0v4.332l.54-.154a.75.75 0 0 1 .82 1.25l-1.75 3.5a.75.75 0 0 1-1.342-.671L11.5 9.423V6.75Z" clipRule="evenodd" />
         <path d="M3.25 6.25a2.75 2.75 0 0 1 2.75-2.75h7.5A2.75 2.75 0 0 1 16.25 6.25v7.5a2.75 2.75 0 0 1-2.75 2.75h-7.5A2.75 2.75 0 0 1 3.25 13.75v-7.5ZM6 3.75A2.25 2.25 0 0 0 3.75 6v.25h12.5V6A2.25 2.25 0 0 0 14 3.75H6Zm-2.25 4v6A2.25 2.25 0 0 0 6 16.25h8a2.25 2.25 0 0 0 2.25-2.25v-6H3.75Z" />
+    </svg>
+);
+
+export const GripVerticalIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={className}>
+        <path d="M7 3a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1V3ZM15 3a1 1 0 0 0-1-1h-1a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1V3Z" />
     </svg>
 );

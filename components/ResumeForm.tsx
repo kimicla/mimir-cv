@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import type { ResumeData, CompanyExperience, Position, Education } from '../types';
-import { SparklesIcon, PlusIcon, TrashIcon } from './icons';
+import type { ResumeData, CompanyExperience, Position, Education, SectionType } from '../types';
+import { SparklesIcon, PlusIcon, TrashIcon, GripVerticalIcon } from './icons';
 import { refineTextWithAI } from '../services/geminiService';
 
 interface ResumeFormProps {
@@ -80,10 +80,13 @@ const TextAreaWithAI: React.FC<{
 };
 
 
-const AccordionSection: React.FC<{ title: string; children: React.ReactNode; isOpen: boolean; onToggle: () => void }> = ({ title, children, isOpen, onToggle }) => (
-    <div className="border-b border-slate-200">
+const AccordionSection: React.FC<{ title: string; children: React.ReactNode; isOpen: boolean; onToggle: () => void; isDraggable?: boolean }> = ({ title, children, isOpen, onToggle, isDraggable = false }) => (
+    <div className="border-b border-slate-200 bg-white">
         <button onClick={onToggle} className="w-full flex justify-between items-center p-4 bg-slate-50 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500">
-            <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
+            <div className="flex items-center gap-3">
+                {isDraggable && <GripVerticalIcon className="w-5 h-5 text-slate-400 cursor-grab" aria-hidden="true" />}
+                <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
+            </div>
             <svg className={`w-5 h-5 text-slate-500 transform transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
         </button>
         {isOpen && <div className="p-4 bg-white space-y-4">{children}</div>}
@@ -120,6 +123,7 @@ const parseExperienceDate = (dateStr?: string, isEndDate: boolean = false): Date
 
 export const ResumeForm: React.FC<ResumeFormProps> = ({ resumeData, setResumeData }) => {
     const [openSection, setOpenSection] = useState<string | null>('personal');
+    const [draggedSection, setDraggedSection] = useState<SectionType | null>(null);
 
     const handleToggle = (section: string) => {
         setOpenSection(openSection === section ? null : section);
@@ -296,45 +300,62 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({ resumeData, setResumeDat
         setResumeData(prev => ({ ...prev, skills: refinedSkills.split(',').map(s => s.trim()) }));
     }, [resumeData.experience, resumeData.skills, setResumeData]);
 
+    const handleDragStart = (e: React.DragEvent<HTMLDivElement>, section: SectionType) => {
+        setDraggedSection(section);
+        e.dataTransfer.effectAllowed = 'move';
+        e.currentTarget.style.opacity = '0.5';
+    };
+
+    const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
+        e.currentTarget.style.opacity = '1';
+        document.querySelectorAll('[data-drag-over="true"]').forEach(el => el.removeAttribute('data-drag-over'));
+    };
+
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+    };
+    
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetSection: SectionType) => {
+        e.preventDefault();
+        if (!draggedSection || draggedSection === targetSection) {
+            return;
+        }
+
+        const sections = [...resumeData.sections];
+        const draggedIndex = sections.indexOf(draggedSection);
+        const targetIndex = sections.indexOf(targetSection);
+
+        const [removed] = sections.splice(draggedIndex, 1);
+        sections.splice(targetIndex, 0, removed);
+      
+        setResumeData(prev => ({...prev, sections }));
+        setDraggedSection(null);
+    };
+
+    const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      if (e.currentTarget.dataset.sectionId !== draggedSection) {
+        e.currentTarget.setAttribute('data-drag-over', 'true');
+      }
+    };
+  
+    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.currentTarget.removeAttribute('data-drag-over');
+    };
+
   const totalPositions = resumeData.experience.reduce((acc, comp) => acc + comp.positions.length, 0);
 
-  return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-      <AccordionSection title="Personal Details" isOpen={openSection === 'personal'} onToggle={() => handleToggle('personal')}>
-          <div className="flex flex-col sm:flex-row items-center gap-6 mb-6 pb-6 border-b border-slate-200">
-              <div className="w-24 h-24 rounded-full bg-slate-200 flex-shrink-0 flex items-center justify-center overflow-hidden">
-                  {resumeData.personalInfo.photo ? (
-                      <img src={resumeData.personalInfo.photo} alt="Profile" className="w-full h-full object-cover" />
-                  ) : (
-                      <svg xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                      </svg>
-                  )}
-              </div>
-              <div className="space-y-2 flex flex-col items-center sm:items-start">
-                  <input type="file" id="photo-upload" className="hidden" accept="image/png, image/jpeg" onChange={handlePhotoChange} />
-                  <label htmlFor="photo-upload" className="cursor-pointer px-4 py-2 bg-white text-slate-700 border border-slate-300 rounded-md hover:bg-slate-50 transition-colors text-sm font-medium text-center">
-                      Upload Photo
-                  </label>
-                  {resumeData.personalInfo.photo && (
-                      <button onClick={removePhoto} className="flex items-center gap-1 px-4 py-2 text-red-600 hover:text-red-800 text-sm font-medium">
-                          <TrashIcon className="w-4 h-4" /> Remove
-                      </button>
-                  )}
-              </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <InputField label="Full Name" id="name" value={resumeData.personalInfo.name} onChange={handlePersonalInfoChange} placeholder="e.g., Jane Doe" />
-              <InputField label="Email" id="email" value={resumeData.personalInfo.email} onChange={handlePersonalInfoChange} placeholder="e.g., jane.doe@example.com" type="email" />
-              <InputField label="Phone Number" id="phone" value={resumeData.personalInfo.phone} onChange={handlePersonalInfoChange} placeholder="e.g., (123) 456-7890" />
-              <InputField label="Address" id="address" value={resumeData.personalInfo.address} onChange={handlePersonalInfoChange} placeholder="e.g., City, State" />
-              <InputField label="LinkedIn Profile" id="linkedin" value={resumeData.personalInfo.linkedin} onChange={handlePersonalInfoChange} placeholder="e.g., linkedin.com/in/janedoe" />
-              <InputField label="Website / Portfolio" id="website" value={resumeData.personalInfo.website} onChange={handlePersonalInfoChange} placeholder="e.g., janedoe.com" />
-          </div>
-      </AccordionSection>
-      
-      <AccordionSection title="Professional Summary" isOpen={openSection === 'summary'} onToggle={() => handleToggle('summary')}>
-        <TextAreaWithAI
+  const sectionTitles: Record<SectionType, string> = {
+    summary: 'Professional Summary',
+    experience: 'Work Experience',
+    education: 'Education',
+    skills: 'Skills',
+  };
+
+  const sectionComponents: Record<SectionType, React.ReactNode> = {
+    summary: (
+      <TextAreaWithAI
             label="Summary"
             id="summary"
             value={resumeData.summary}
@@ -343,10 +364,10 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({ resumeData, setResumeDat
             placeholder="Write a brief summary of your career and skills. Or, fill out your experience and skills, then click 'Refine with AI' to generate one."
             rows={5}
         />
-      </AccordionSection>
-
-      <AccordionSection title="Work Experience" isOpen={openSection === 'experience'} onToggle={() => handleToggle('experience')}>
-          <div className="flex justify-end mb-4 -mt-2">
+    ),
+    experience: (
+      <>
+        <div className="flex justify-end mb-4 -mt-2">
             <button
                 onClick={sortExperience}
                 disabled={totalPositions < 2}
@@ -417,29 +438,30 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({ resumeData, setResumeDat
           <button onClick={addCompany} className="w-full flex items-center justify-center gap-2 mt-4 px-4 py-2 bg-slate-100 text-slate-700 font-semibold rounded-md hover:bg-slate-200 transition-colors">
               <PlusIcon className="w-5 h-5" /> Add Company
           </button>
-      </AccordionSection>
-      
-      <AccordionSection title="Education" isOpen={openSection === 'education'} onToggle={() => handleToggle('education')}>
-          {resumeData.education.map((edu, index) => (
-              <div key={edu.id} className="p-4 border border-slate-200 rounded-lg space-y-4 relative">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <InputField label="Degree / Field of Study" id={`degree-${index}`} name="degree" value={edu.degree} onChange={(e) => handleEducationChange(index, e)} placeholder="e.g., B.S. in Computer Science" />
-                      <InputField label="School" id={`school-${index}`} name="school" value={edu.school} onChange={(e) => handleEducationChange(index, e)} placeholder="e.g., University of Technology" />
-                      <InputField label="Location" id={`location-${index}`} name="location" value={edu.location} onChange={(e) => handleEducationChange(index, e)} placeholder="e.g., Techville, USA" />
-                      <InputField label="Graduation Date" id={`graduationDate-${index}`} name="graduationDate" value={edu.graduationDate} onChange={(e) => handleEducationChange(index, e)} placeholder="e.g., May 2019" />
-                  </div>
-                  <button onClick={() => removeEducation(index)} className="absolute top-2 right-2 p-1 text-slate-400 hover:text-red-600 rounded-full hover:bg-red-100 transition-colors">
-                      <TrashIcon className="w-5 h-5" />
-                  </button>
-              </div>
-          ))}
-          <button onClick={addEducation} className="w-full flex items-center justify-center gap-2 mt-4 px-4 py-2 bg-slate-100 text-slate-700 font-semibold rounded-md hover:bg-slate-200 transition-colors">
-              <PlusIcon className="w-5 h-5" /> Add Education
-          </button>
-      </AccordionSection>
-      
-      <AccordionSection title="Skills" isOpen={openSection === 'skills'} onToggle={() => handleToggle('skills')}>
-        <TextAreaWithAI
+      </>
+    ),
+    education: (
+      <>
+        {resumeData.education.map((edu, index) => (
+            <div key={edu.id} className="p-4 border border-slate-200 rounded-lg space-y-4 relative">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <InputField label="Degree / Field of Study" id={`degree-${index}`} name="degree" value={edu.degree} onChange={(e) => handleEducationChange(index, e)} placeholder="e.g., B.S. in Computer Science" />
+                    <InputField label="School" id={`school-${index}`} name="school" value={edu.school} onChange={(e) => handleEducationChange(index, e)} placeholder="e.g., University of Technology" />
+                    <InputField label="Location" id={`location-${index}`} name="location" value={edu.location} onChange={(e) => handleEducationChange(index, e)} placeholder="e.g., Techville, USA" />
+                    <InputField label="Graduation Date" id={`graduationDate-${index}`} name="graduationDate" value={edu.graduationDate} onChange={(e) => handleEducationChange(index, e)} placeholder="e.g., May 2019" />
+                </div>
+                <button onClick={() => removeEducation(index)} className="absolute top-2 right-2 p-1 text-slate-400 hover:text-red-600 rounded-full hover:bg-red-100 transition-colors">
+                    <TrashIcon className="w-5 h-5" />
+                </button>
+            </div>
+        ))}
+        <button onClick={addEducation} className="w-full flex items-center justify-center gap-2 mt-4 px-4 py-2 bg-slate-100 text-slate-700 font-semibold rounded-md hover:bg-slate-200 transition-colors">
+            <PlusIcon className="w-5 h-5" /> Add Education
+        </button>
+      </>
+    ),
+    skills: (
+      <TextAreaWithAI
             label="Skills"
             id="skills"
             value={resumeData.skills.join(', ')}
@@ -448,7 +470,67 @@ export const ResumeForm: React.FC<ResumeFormProps> = ({ resumeData, setResumeDat
             placeholder="Enter skills separated by commas, e.g., React, TypeScript, Project Management"
             rows={4}
         />
+    ),
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow-sm overflow-hidden data-[drag-over=true]:bg-indigo-100/50">
+      <AccordionSection title="Personal Details" isOpen={openSection === 'personal'} onToggle={() => handleToggle('personal')}>
+          <div className="flex flex-col sm:flex-row items-center gap-6 mb-6 pb-6 border-b border-slate-200">
+              <div className="w-24 h-24 rounded-full bg-slate-200 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                  {resumeData.personalInfo.photo ? (
+                      <img src={resumeData.personalInfo.photo} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                      </svg>
+                  )}
+              </div>
+              <div className="space-y-2 flex flex-col items-center sm:items-start">
+                  <input type="file" id="photo-upload" className="hidden" accept="image/png, image/jpeg" onChange={handlePhotoChange} />
+                  <label htmlFor="photo-upload" className="cursor-pointer px-4 py-2 bg-white text-slate-700 border border-slate-300 rounded-md hover:bg-slate-50 transition-colors text-sm font-medium text-center">
+                      Upload Photo
+                  </label>
+                  {resumeData.personalInfo.photo && (
+                      <button onClick={removePhoto} className="flex items-center gap-1 px-4 py-2 text-red-600 hover:text-red-800 text-sm font-medium">
+                          <TrashIcon className="w-4 h-4" /> Remove
+                      </button>
+                  )}
+              </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <InputField label="Full Name" id="name" value={resumeData.personalInfo.name} onChange={handlePersonalInfoChange} placeholder="e.g., Jane Doe" />
+              <InputField label="Email" id="email" value={resumeData.personalInfo.email} onChange={handlePersonalInfoChange} placeholder="e.g., jane.doe@example.com" type="email" />
+              <InputField label="Phone Number" id="phone" value={resumeData.personalInfo.phone} onChange={handlePersonalInfoChange} placeholder="e.g., (123) 456-7890" />
+              <InputField label="Address" id="address" value={resumeData.personalInfo.address} onChange={handlePersonalInfoChange} placeholder="e.g., City, State" />
+              <InputField label="LinkedIn Profile" id="linkedin" value={resumeData.personalInfo.linkedin} onChange={handlePersonalInfoChange} placeholder="e.g., linkedin.com/in/janedoe" />
+              <InputField label="Website / Portfolio" id="website" value={resumeData.personalInfo.website} onChange={handlePersonalInfoChange} placeholder="e.g., janedoe.com" />
+          </div>
       </AccordionSection>
+      
+      {resumeData.sections.map((sectionId) => (
+        <div
+            key={sectionId}
+            draggable
+            onDragStart={(e) => handleDragStart(e, sectionId)}
+            onDragEnd={handleDragEnd}
+            onDragOver={handleDragOver}
+            onDrop={(e) => handleDrop(e, sectionId)}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            data-section-id={sectionId}
+            className="transition-all"
+        >
+          <AccordionSection
+            title={sectionTitles[sectionId]}
+            isOpen={openSection === sectionId}
+            onToggle={() => handleToggle(sectionId)}
+            isDraggable
+          >
+            {sectionComponents[sectionId]}
+          </AccordionSection>
+        </div>
+      ))}
     </div>
   );
 };
